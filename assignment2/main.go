@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 )
 
 // the TCPcall with necessary info
@@ -56,14 +58,49 @@ func process(name string, TCP_handshake_ch chan TCP) {
 
 		}
 	}
+
 }
 
+func middleware(client_ch chan TCP, server_ch chan TCP) {
+	for {
+		ran := rand.Intn(10)
+		select {
+		case client_answer := <-client_ch:
+			if ran == 0 {
+				fmt.Println("Middleware: Dropped packet from client")
+				server_ch <- TCP{false, false, 0, 0}
+			} else if ran == 1 {
+				fmt.Println("Middleware: Delayed packet from client")
+				time.Sleep(2 * time.Second)
+				server_ch <- client_answer
+			} else {
+				fmt.Println("Middleware: Forwarded packet from client")
+				server_ch <- client_answer
+			}
+		case server_answer := <-server_ch:
+			if ran == 0 {
+				fmt.Println("Middleware: Dropped packet from server")
+				client_ch <- TCP{false, false, 0, 0}
+			} else if ran == 1 {
+				fmt.Println("Middleware: Delayed packet from server")
+				time.Sleep(2 * time.Second)
+				client_ch <- server_answer
+			} else {
+				fmt.Println("Middleware: Forwarded packet from server")
+				client_ch <- server_answer
+			}
+		}
+	}
+}
 func main() {
-	TCP_handshake_ch := make(chan TCP)
+	TCP_server_ch := make(chan TCP)
+	TCP_client_ch := make(chan TCP)
 
-	go process("client", TCP_handshake_ch)
+	go process("client", TCP_client_ch)
 
-	go process("server", TCP_handshake_ch)
+	go process("server", TCP_server_ch)
+
+	go middleware(TCP_client_ch, TCP_server_ch)
 	for {
 
 	}

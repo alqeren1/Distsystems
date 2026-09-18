@@ -48,6 +48,7 @@ func philospher(name string, firstForkChoice_ch chan ForkRequest, secondForkChoi
 		//fmt.Println(name + " " + strconv.Itoa(eatCount))
 		if eatCount == 3 {
 			globalEatCount++
+			fmt.Println(name + " has eaten 3 times!")
 		}
 		if globalEatCount == 5 {
 			fmt.Println("All philosophers have eaten at least three times!")
