@@ -1,5 +1,5 @@
 syntax = "proto3";
-package timeservice;
+package proto;
 option go_package = "timeapp/grpc/proto";
 
 

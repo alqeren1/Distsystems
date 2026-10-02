@@ -7,12 +7,11 @@
 package proto
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -106,14 +105,14 @@ var File_grpc_proto_proto_proto protoreflect.FileDescriptor
 
 const file_grpc_proto_proto_proto_rawDesc = "" +
 	"\n" +
-	"\x16grpc/proto/proto.proto\x12\vtimeservice\"\a\n" +
+	"\x16grpc/proto/proto.proto\x12\x05proto\"\a\n" +
 	"\x05Empty\"-\n" +
 	"\fTimeResponse\x12\x1d\n" +
 	"\n" +
-	"unix_nanos\x18\x01 \x01(\x03R\tunixNanos2F\n" +
+	"unix_nanos\x18\x01 \x01(\x03R\tunixNanos2:\n" +
 	"\n" +
-	"TimeKeeper\x128\n" +
-	"\aGetTime\x12\x12.timeservice.Empty\x1a\x19.timeservice.TimeResponseB\x14Z\x12timeapp/grpc/protob\x06proto3"
+	"TimeKeeper\x12,\n" +
+	"\aGetTime\x12\f.proto.Empty\x1a\x13.proto.TimeResponseB\x14Z\x12timeapp/grpc/protob\x06proto3"
 
 var (
 	file_grpc_proto_proto_proto_rawDescOnce sync.Once
@@ -129,12 +128,12 @@ func file_grpc_proto_proto_proto_rawDescGZIP() []byte {
 
 var file_grpc_proto_proto_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_grpc_proto_proto_proto_goTypes = []any{
-	(*Empty)(nil),        // 0: timeservice.Empty
-	(*TimeResponse)(nil), // 1: timeservice.TimeResponse
+	(*Empty)(nil),        // 0: proto.Empty
+	(*TimeResponse)(nil), // 1: proto.TimeResponse
 }
 var file_grpc_proto_proto_proto_depIdxs = []int32{
-	0, // 0: timeservice.TimeKeeper.GetTime:input_type -> timeservice.Empty
-	1, // 1: timeservice.TimeKeeper.GetTime:output_type -> timeservice.TimeResponse
+	0, // 0: proto.TimeKeeper.GetTime:input_type -> proto.Empty
+	1, // 1: proto.TimeKeeper.GetTime:output_type -> proto.TimeResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

@@ -8,7 +8,6 @@ package proto
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TimeKeeper_GetTime_FullMethodName = "/timeservice.TimeKeeper/GetTime"
+	TimeKeeper_GetTime_FullMethodName = "/proto.TimeKeeper/GetTime"
 )
 
 // TimeKeeperClient is the client API for TimeKeeper service.
@@ -109,7 +108,7 @@ func _TimeKeeper_GetTime_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TimeKeeper_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "timeservice.TimeKeeper",
+	ServiceName: "proto.TimeKeeper",
 	HandlerType: (*TimeKeeperServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
