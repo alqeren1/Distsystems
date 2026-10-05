@@ -7,13 +7,9 @@ import (
 	"time"    // Used for the timeout and to convert Unix nanoseconds back to a readable time.
 
 	// This imports the Go code generated from your .proto file.
-	// It gives us:
-	// - proto.Empty
-	// - proto.TimeResponse
-	// - proto.NewTimeKeeperClient
+
 	proto "timeapp/grpc/proto"
 
-	// Main gRPC package.
 	// We use this to connect to the gRPC server.
 	"google.golang.org/grpc"
 
@@ -25,13 +21,7 @@ import (
 func main() {
 
 	// Create a connection to the gRPC server.
-	//
-	// "localhost:50051" means:
-	// - localhost = this same computer
-	// - 50051 = the port where our server is listening
-	//
-	// insecure.NewCredentials() means we are not using TLS encryption.
-	// That is fine for a simple local course exercise.
+
 	conn, err := grpc.Dial(
 		"localhost:50051",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
