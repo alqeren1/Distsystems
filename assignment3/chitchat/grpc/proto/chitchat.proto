@@ -1,0 +1,37 @@
+syntax = "proto3";
+package proto;
+option go_package = "chitchat/grpc/proto";
+
+
+
+message Empty {}
+
+message JoinReq {
+    string client_id = 1;
+
+}
+
+message LeaveReq {
+    string client_id = 1;
+    
+}
+
+message PublishReq{
+    string client_id = 1;
+    string message = 2;
+    
+}
+message BroadcastMessage {
+    string client_id = 1;
+    string content = 2;
+    int64 logical_time =3;
+    
+}
+
+
+service Chitchat{
+    rpc Join (JoinReq) returns (stream BroadcastMessage);
+    rpc Publish (PublishReq) returns (Empty);
+    rpc Leave (LeaveReq) returns (Empty);
+
+}
