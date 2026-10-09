@@ -13,4 +13,4 @@ MESSAGES IN PROTO:
 -publish message
 -broadcast message to all clients
 
-make proto code for rebuilding proto
+"make proto" code for rebuilding proto

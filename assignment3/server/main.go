@@ -8,7 +8,6 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"chitchat/chitchat/grpc/proto"
 	proto "chitchat/grpc/proto"
 
 	"google.golang.org/grpc"
@@ -44,6 +43,19 @@ func (s *chatServer) Join(
     s.logicalClock++
     currentTime := s.logicalClock
     s.mu.Unlock()
+	message := fmt.Sprintf(
+    "Participant %s joined Chit Chat at logical time %d",
+    clientID,
+    currentTime,
+)
+	broadcastMsg := &proto.BroadcastMessage{
+		ClientId: clientID,
+		Content:     message,
+		LogicalTime: currentTime,
+}
+	
+
+	s.broadcast(broadcastMsg)
 
     log.Printf(
         "Component=Server Event=ClientJoin ClientID=%s LogicalTime=%d",
@@ -53,13 +65,7 @@ func (s *chatServer) Join(
 	//cleanup. It only runs after the whole join function finishes, after for loop ends
 	//needed in the case that client didnt call leave and crashed or just closed the app
 	defer func() {
-		s.mu.Lock()
-
-		if _, exists := s.clients[clientID]; exists {
-        delete(s.clients, clientID)
-    	}
-
-		s.mu.Unlock()
+		s.removeClient(clientID)
 
 		log.Printf(
 			"Component=Server Event=ClientDisconnected ClientID=%s",
@@ -67,21 +73,26 @@ func (s *chatServer) Join(
 		)
 	}()
 	//for keeping the connection open, infinate loop
-    for {
+    
+	for {
+    select {
+		//If a broadcast message arrives, handle it.
+		case msg, ok := <-clientChannel:
+			if !ok {
+				return nil
+			}
 
-	//after a clients leaves, and channel is closed, this part makes sure the loop is not running
-	//for nothing
-    msg, ok := <-clientChannel
-
-	if !ok {
-		return nil
-	}
-
-    if err := stream.Send(msg); err != nil {
-        return err
+			if err := stream.Send(msg); err != nil {
+				return err
+			}
+		// If the gRPC client disconnects, cancels the call, crashes, or the connection dies, 
+		// the stream context becomes done.
+		case <-stream.Context().Done():
+			return nil
     }
 }
 }
+
 func (s *chatServer) removeClient (clientid string)  {
 	s.mu.Lock()
     clientChannel, exists := s.clients[clientid]
@@ -127,36 +138,8 @@ func (s *chatServer) Leave(
 
     
 
-    s.mu.Lock()
-    clientChannel, exists := s.clients[clientID]
+    s.removeClient(clientID)
 
-	if exists {
-		delete(s.clients, clientID)
-		close(clientChannel)
-	}
-    s.logicalClock++
-    currentTime := s.logicalClock
-    s.mu.Unlock()
-
-    
-	message := fmt.Sprintf(
-    "Participant %s left Chit Chat at logical time %d",
-    clientID,
-    currentTime,
-)
-	broadcastMsg := &proto.BroadcastMessage{
-		ClientId: clientID,
-		Content:     message,
-		LogicalTime: currentTime,
-}
-	
-
-	s.broadcast(broadcastMsg)
-	log.Printf(
-        "Component=Server Event=ClientLeave ClientID=%s LogicalTime=%d",
-        clientID,
-        currentTime,
-    )
 	
 	return &proto.Empty{}, nil
 
@@ -215,13 +198,13 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-
-	proto.RegisterTimeKeeperServer(
+	server := newChatServer()
+	proto.RegisterChitchatServer(
 		grpcServer,
-		&timeServer{},
+		server,
 	)
 
-	log.Println("gRPC server running on port 50051")
+	log.Println("Component=Server Event=Startup Port=50051")
 
 	err = grpcServer.Serve(listener)
 	if err != nil {
