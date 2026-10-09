@@ -60,6 +60,15 @@ if err != nil {
 go streamer(stream)
 }
 
-func (c *Client) Leave() {}
+func (c *Client) Leave() {
+	proto.LeaveReq := &proto.LeaveReq{
+	ClientId: c.clientID,
+}
+}
 
-func (c *Client) SendMessage(message string) {}
+func (c *Client) SendMessage(message string) {
+	proto.Publishreq := &proto.PublishReq{
+		ClientId: c.clientID,
+		Content:  message,	
+}
+}
