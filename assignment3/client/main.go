@@ -33,7 +33,7 @@ func main() {
 
 	// If creating the connection fails, stop the program.
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Component=Client Event=ConnectionSetupFailed Address=localhost:50051 Error=%q", err)
 	}
 
 	// defer means:
@@ -60,7 +60,7 @@ func main() {
         msg, err := stream.Recv()
 
         if err != nil {
-            log.Println("stream ended:", err)
+            log.Printf("Component=Client Event=StreamEnded ClientID=%s Error=%q", clientID, err)
             return
         }
 
@@ -94,7 +94,7 @@ func main() {
 			)
 
 			if err != nil {
-				log.Println("leave failed:", err)
+				log.Printf("Component=Client Event=LeaveFailed ClientID=%s Error=%q", clientID, err)
 			}
 
 			return
@@ -109,7 +109,7 @@ func main() {
 		)
 
     if err != nil {
-        log.Println("publish failed:", err)
+        log.Printf("Component=Client Event=PublishFailed ClientID=%s Error=%q", clientID, err)
     }
 }
 	
@@ -117,7 +117,7 @@ func main() {
 	// If the RPC fails, stop the program.
 	
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Component=Client Event=JoinFailed ClientID=%s Error=%q", clientID, err)
 	}
 
 	

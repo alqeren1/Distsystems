@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
+	"time"
 	"unicode/utf8"
 
 	proto "chitchat/grpc/proto"
@@ -36,9 +40,17 @@ func (s *chatServer) Join(
 
     clientID := req.ClientId
 
-    clientChannel := make(chan *proto.BroadcastMessage, 10)
+    clientChannel := make(chan *proto.BroadcastMessage, 100)
 
     s.mu.Lock()
+	// checking if client name is available
+	if _, exists := s.clients[clientID]; exists {
+    s.mu.Unlock()
+    return status.Error(
+        codes.AlreadyExists,
+        "client ID is already in use",
+    )
+}
     s.clients[clientID] = clientChannel
     s.logicalClock++
     currentTime := s.logicalClock
@@ -85,6 +97,12 @@ func (s *chatServer) Join(
 			if err := stream.Send(msg); err != nil {
 				return err
 			}
+			log.Printf(
+			"Component=Server Event=MessageSent ClientID=%s LogicalTime=%d Message=%q",
+			clientID,
+			msg.LogicalTime,
+			msg.Content,
+)
 		// If the gRPC client disconnects, cancels the call, crashes, or the connection dies, 
 		// the stream context becomes done.
 		case <-stream.Context().Done():
@@ -94,6 +112,7 @@ func (s *chatServer) Join(
 }
 
 func (s *chatServer) removeClient (clientid string)  {
+	
 	s.mu.Lock()
     clientChannel, exists := s.clients[clientid]
 
@@ -146,12 +165,30 @@ func (s *chatServer) Leave(
 }
 
 func (s *chatServer) broadcast(msg *proto.BroadcastMessage) {
+	slowClients := []string{}
     s.mu.Lock()
 	// happens at the end
-    defer s.mu.Unlock()
+    defer func() {
+		s.mu.Unlock()
+		//remove slow clients 
+		for _, clientID := range slowClients{
+
+		s.removeClient(clientID)
+
+		} }()
 	//send message to all clients
-    for _, clientChannel := range s.clients {
-        clientChannel <- msg
+    for clientID, clientChannel := range s.clients {
+		select{
+		case clientChannel <- msg:
+		// detect slow clients to remove at the end
+		case <- time.After(500 * time.Millisecond):
+			log.Printf(
+			"Component=Server Event=SlowClientTimeout ClientID=%s",
+			clientID,)
+			slowClients = append(slowClients,clientID)
+
+		}
+        
     }
 }
 
@@ -194,7 +231,7 @@ func (s *chatServer) Publish(
 func main() {
 	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Component=Server Event=ListenFailed Address=:50051 Error=%q", err)
 	}
 
 	grpcServer := grpc.NewServer()
@@ -204,10 +241,36 @@ func main() {
 		server,
 	)
 
+	// Catch Ctrl+C and termination signals so main can finish normally
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(shutdown)
+
+	// Serve can return before shutdown finishes, use this channel to wait.
+	stopped := make(chan struct{})
+	go func() {
+		<-shutdown
+		log.Println("Component=Server Event=ShutdownStarted")
+
+		// Let ongoing RPCs finish, but force a stop after two seconds.
+		// Join streams can otherwise keep GracefulStop waiting indefinitely.
+		timer := time.AfterFunc(2*time.Second, grpcServer.Stop)
+		grpcServer.GracefulStop()
+		timer.Stop()
+
+		close(stopped)
+	}()
+
 	log.Println("Component=Server Event=Startup Port=50051")
 
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		log.Fatal(err)
+		// Unlike log.Fatal, returning allows deferred functions to run.
+		log.Printf("Component=Server Event=ServeError Error=%q", err)
+		return
 	}
+
+	// Log completion only after the shutdown goroutine has finished.
+	<-stopped
+	log.Println("Component=Server Event=Shutdown")
 }
