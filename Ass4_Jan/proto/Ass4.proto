@@ -1,0 +1,16 @@
+syntax = "proto3";
+package proto;
+option go_package = "Ass4/proto";
+
+message ReqData{
+    int64 node_id = 1;
+    int64 t = 2;
+}
+
+message ReplyAccessGranted{
+
+}
+
+service Ass4{
+    rpc RequestAccess (ReqData) returns (ReplyAccessGranted);
+}
