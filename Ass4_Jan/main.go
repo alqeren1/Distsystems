@@ -9,17 +9,21 @@ import (
 	"net"
 	"os"
 
+	"sync"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
-
 var nodePorts = []string{":50051", ":50052", ":50053"}
 
 type NodeMemoryStruct struct {
+	mu sync.Mutex
 	nodeID  int64
-	t       int64
+	t           int64 // Current Lamport clock
+	requestTime int64 // Timestamp of our pending CS request
 	state   string
 	clients []proto.Ass4Client
+	deferred []chan struct{}
 	proto.UnimplementedAss4Server
 }
 
@@ -50,15 +54,11 @@ func runNode(node *NodeMemoryStruct, ownPort string) {
 	log.Printf("clients created: %d", len(node.clients))
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		log.Println("Enter pressed, requesting access.")
-		for _, client := range node.clients {
-			_, err := client.RequestAccess(context.Background(), &proto.ReqData{NodeId: node.nodeID, T: node.t})
-			if err != nil {
-				log.Printf("RequestAccess failed: %v", err)
-				continue
-			}
-			log.Println("Reply arrived")
-		}
+		log.Println("Enter pressed, testing concurrent requests.")
+
+		granted := node.requestPermissions(1)
+
+		log.Printf("All peers granted: %t", granted)
 	}
 }
 func main() {
