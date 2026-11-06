@@ -25,7 +25,7 @@ type NodeMemoryStruct struct {
 
 func (nm *NodeMemoryStruct) RequestAccess(ctx context.Context, req *proto.ReqData) (*proto.ReplyAccessGranted, error) {
 	log.Print(req.NodeId, req.T)
-	return &proto.ReplyAccessGranted{}, nil
+	return nm.checkAccess(ctx, req), nil
 }
 
 func runNode(node *NodeMemoryStruct, ownPort string) {
