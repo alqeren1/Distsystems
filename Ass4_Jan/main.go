@@ -20,6 +20,7 @@ type NodeMemoryStruct struct {
 	t       int64
 	state   string
 	clients []proto.Ass4Client
+	waitQue []proto.reqData	
 	proto.UnimplementedAss4Server
 }
 
