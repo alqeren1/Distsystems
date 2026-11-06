@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 )
 
 func (node *NodeMemoryStruct) beginRequest() (int64, bool) { //returns timestamp of new req and if its successfull
@@ -43,44 +44,50 @@ func (node *NodeMemoryStruct) requestPermissions(timestamp int64) bool {
     // One result for every peer
     results := make(chan error, len(node.clients))
 
-    for i, client := range node.clients {
+    for _, peer := range node.clients {
 
         wg.Add(1)
 
-        go func(peerNumber int, peer proto.Ass4Client) {
+        go func(p peerClient) {
             defer wg.Done()
 
             log.Printf(
-                "Node %d sending REQUEST to peer %d",
+                "Node %d sending REQUEST to Node %d",
                 node.nodeID,
-                peerNumber,
+                p.id,
             )
 
-            _, err := peer.RequestAccess(
-                context.Background(),
-                &proto.ReqData{
-                    NodeId: node.nodeID,
-                    T:      timestamp,
-                },
-            )
+            ctx, cancel := context.WithTimeout(
+				context.Background(),
+				60*time.Second,
+			)
+			defer cancel()
+
+			_, err := p.client.RequestAccess(
+				ctx,
+				&proto.ReqData{
+					NodeId: node.nodeID,
+					T:      timestamp,
+				},
+			)
 
             if err != nil {
                 log.Printf(
-                    "Request to peer %d failed: %v",
-                    peerNumber,
+                    "Request to Node %d failed: %v",
+                    p.id,
                     err,
                 )
             } else {
                 log.Printf(
-                    "Node %d received REPLY from peer %d",
+                    "Node %d received REPLY from Node %d",
                     node.nodeID,
-                    peerNumber,
+                    p.id,
                 )
             }
 
             results <- err
 
-        }(i+1, client)
+        }(peer)
     }
 
     // Wait until all requests have finished
