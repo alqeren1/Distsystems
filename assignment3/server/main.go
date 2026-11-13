@@ -23,7 +23,7 @@ type chatServer struct {
 	proto.UnimplementedChitchatServer
 
 	mu           sync.Mutex
-	logicalClock int64
+	logicalTime int64
 	clients      map[string]chan *proto.BroadcastMessage
 }
 
@@ -52,8 +52,8 @@ func (s *chatServer) Join(
 		)
 	}
 	s.clients[clientID] = clientChannel
-	s.logicalClock++
-	currentTime := s.logicalClock
+	s.logicalTime++
+	currentTime := s.logicalTime
 	s.mu.Unlock()
 	message := fmt.Sprintf(
 		"Participant %s joined Chit Chat at logical time %d",
@@ -122,8 +122,8 @@ func (s *chatServer) removeClient(clientid string) {
 		s.mu.Unlock()
 		return
 	}
-	s.logicalClock++
-	currentTime := s.logicalClock
+	s.logicalTime++
+	currentTime := s.logicalTime
 	message := fmt.Sprintf(
 		"Participant %s left Chit Chat at logical time %d",
 		clientid,
@@ -152,10 +152,14 @@ func (s *chatServer) Leave(
 ) (*proto.LeaveAccepted, error) {
 
 	clientID := req.ClientId
+	timestamp := req.LogicalTime
+	timestamp ++
 
 	s.removeClient(clientID)
 
-	return &proto.LeaveAccepted{}, nil
+	logicalClock := max(timestamp,s.logicalTime)
+
+	return &proto.LeaveAccepted{LogicalTime: logicalClock}, nil
 
 }
 
@@ -204,8 +208,8 @@ func (s *chatServer) Publish(
 	}
 
 	s.mu.Lock()
-	s.logicalClock++
-	currentTime := s.logicalClock
+	s.logicalTime++
+	currentTime := s.logicalTime
 	s.mu.Unlock()
 
 	broadcastMsg := &proto.BroadcastMessage{
