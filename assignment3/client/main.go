@@ -33,7 +33,7 @@ func main() {
 
 	// If creating the connection fails, stop the program.
 	if err != nil {
-		log.Fatalf("Component=Client Event=ConnectionSetupFailed Address=localhost:50051 Error=%q", err)
+		log.Fatalf("Component=Client Event=ConnectionSetupFailed Address=localhost:50051 Error=%q, LogicalTime=%d", err, logicalTime)
 	}
 
 	// defer means:
@@ -61,7 +61,7 @@ func main() {
 			msg, err := stream.Recv()
 
 			if err != nil {
-				log.Printf("Component=Client Event=StreamEnded ClientID=%s Error=%q", clientID, err)
+				log.Printf("Component=Client Event=StreamEnded ClientID=%s Error=%q, LogicalTime=%d", clientID, err, logicalTime)
 				return
 			}
 			logicalTime = max(logicalTime, msg.LogicalTime) + 1
@@ -97,7 +97,7 @@ func main() {
 			)
 
 			if err != nil {
-				log.Printf("Component=Client Event=LeaveFailed ClientID=%s Error=%q", clientID, err)
+				log.Printf("Component=Client Event=LeaveFailed ClientID=%s Error=%q LogicalTime=%d", clientID, err, logicalTime)
 				return
 			}
 			logicalTime = max(logicalTime, leave.LogicalTime) + 1
@@ -116,14 +116,14 @@ func main() {
 		)
 
 		if err != nil {
-			log.Printf("Component=Client Event=PublishFailed ClientID=%s Error=%q", clientID, err)
+			log.Printf("Component=Client Event=PublishFailed ClientID=%s Error=%q LogicalTime=%d", clientID, err, logicalTime)
 		}
 	}
 
 	// If the RPC fails, stop the program.
 	logicalTime++
 	if err != nil {
-		log.Fatalf("Component=Client Event=JoinFailed ClientID=%s Error=%q", clientID, err)
+		log.Fatalf("Component=Client Event=JoinFailed ClientID=%s Error=%q, LogicalTime=%d", clientID, err, logicalTime)
 	}
 
 }
