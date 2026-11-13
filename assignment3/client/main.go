@@ -23,7 +23,7 @@ import (
 )
 
 func main() {
-
+	logicalTime := int64(0)
 	// Create a connection to the gRPC server.
 
 	conn, err := grpc.NewClient(
@@ -44,41 +44,42 @@ func main() {
 
 	client := proto.NewChitchatClient(conn)
 
-	
 	ctx := context.Background()
 
 	fmt.Printf("Type a username: ")
 	scanner2 := bufio.NewScanner(os.Stdin)
 	scanner2.Scan()
 	clientID := scanner2.Text()
+	logicalTime++
 	joinReq := &proto.JoinReq{
-    ClientId: clientID,
+		ClientId:    clientID,
+		LogicalTime: logicalTime,
 	}
 	stream, err := client.Join(ctx, joinReq)
 	go func() {
-    for {
-        msg, err := stream.Recv()
+		for {
+			msg, err := stream.Recv()
 
-        if err != nil {
-            log.Printf("Component=Client Event=StreamEnded ClientID=%s Error=%q", clientID, err)
-            return
-        }
+			if err != nil {
+				log.Printf("Component=Client Event=StreamEnded ClientID=%s Error=%q", clientID, err)
+				return
+			}
+			logicalTime = max(logicalTime, msg.LogicalTime) + 1
+			fmt.Printf(
+				"[%d][%s] %s\n",
+				logicalTime,
+				msg.ClientId,
+				msg.Content,
+			)
 
-        fmt.Printf(
-            "[%d][%s] %s\n",
-            msg.LogicalTime,
-			msg.ClientId,
-            msg.Content,
-        )
-
-        log.Printf(
-            "Component=Client Event=MessageReceived ClientID=%s LogicalTime=%d Message=%q",
-            clientID,
-            msg.LogicalTime,
-            msg.Content,
-        )
-    }
-}()
+			log.Printf(
+				"Component=Client Event=MessageReceived ClientID=%s LogicalTime=%d Message=%q",
+				clientID,
+				logicalTime,
+				msg.Content,
+			)
+		}
+	}()
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -86,10 +87,12 @@ func main() {
 		text := scanner.Text()
 
 		if text == "/leave" {
+			logicalTime++
 			_, err := client.Leave(
 				context.Background(),
 				&proto.LeaveReq{
-					ClientId: clientID,
+					ClientId:    clientID,
+					LogicalTime: logicalTime,
 				},
 			)
 
@@ -100,25 +103,25 @@ func main() {
 			return
 		}
 
+		logicalTime++
 		_, err := client.Publish(
 			context.Background(),
 			&proto.PublishReq{
-				ClientId: clientID,
-				Message:  text,
+				ClientId:    clientID,
+				LogicalTime: logicalTime,
+				Message:     text,
 			},
 		)
 
-    if err != nil {
-        log.Printf("Component=Client Event=PublishFailed ClientID=%s Error=%q", clientID, err)
-    }
-}
-	
+		if err != nil {
+			log.Printf("Component=Client Event=PublishFailed ClientID=%s Error=%q", clientID, err)
+		}
+	}
 
 	// If the RPC fails, stop the program.
-	
+	logicalTime++
 	if err != nil {
 		log.Fatalf("Component=Client Event=JoinFailed ClientID=%s Error=%q", clientID, err)
 	}
 
-	
 }
