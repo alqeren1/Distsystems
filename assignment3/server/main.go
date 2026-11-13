@@ -41,7 +41,7 @@ func (s *chatServer) Join(
 	clientID := req.ClientId
 	incomingLogicalTime := req.LogicalTime
 	incomingLogicalTime++
-
+	
 	clientChannel := make(chan *proto.BroadcastMessage, 100)
 
 	s.mu.Lock()
@@ -57,8 +57,9 @@ func (s *chatServer) Join(
 	s.logicalTime++
 
 	currentTime := max(s.logicalTime, incomingLogicalTime)
+	
 	//recieve join req log
-	s.mu.Lock()
+	
 	s.logicalTime = currentTime +1
 	s.mu.Unlock()
 	//sending join req log
@@ -105,7 +106,7 @@ func (s *chatServer) Join(
 				return err
 			}
 			log.Printf(
-				"Component=Server Event=MessageSent ClientID=%s LogicalTime=%d Message=%q",
+				"Component=Server Event=MessageSent to ClientID=%s LogicalTime=%d Message=%q",
 				clientID,
 				msg.LogicalTime,
 				msg.Content,
@@ -212,6 +213,7 @@ func (s *chatServer) Publish(
 
 	clientID := req.ClientId
 	message := req.Message
+	clientclock := req.LogicalTime
 
 	if !utf8.ValidString(message) {
 		return nil, status.Error(codes.InvalidArgument, "message must be valid UTF-8")
@@ -221,21 +223,32 @@ func (s *chatServer) Publish(
 	}
 
 	s.mu.Lock()
-	s.logicalTime++
-	currentTime := s.logicalTime
-	s.mu.Unlock()
+	correctTime := max(clientclock,s.logicalTime) + 1
+	s.logicalTime = correctTime
+	
 
+
+	log.Printf(
+		"Component=Server Event=MessageReqRecieved ClientID=%s LogicalTime=%d Message=%q",
+		clientID,
+		correctTime,
+		message,
+	)
+	
+	s.logicalTime++
+	correctTime = s.logicalTime
+	
 	broadcastMsg := &proto.BroadcastMessage{
 		ClientId:    clientID,
 		Content:     message,
-		LogicalTime: currentTime,
+		LogicalTime: correctTime,
 	}
-
+	s.mu.Unlock()
 	s.broadcast(broadcastMsg)
 	log.Printf(
 		"Component=Server Event=MessageBroadcast ClientID=%s LogicalTime=%d Message=%q",
 		clientID,
-		currentTime,
+		correctTime,
 		message,
 	)
 	return &proto.PublishAccepted{}, nil

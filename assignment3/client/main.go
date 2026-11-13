@@ -55,6 +55,7 @@ func main() {
 		ClientId:    clientID,
 		LogicalTime: logicalTime,
 	}
+	
 	stream, err := client.Join(ctx, joinReq)
 	go func() {
 		for {
@@ -106,6 +107,8 @@ func main() {
 		}
 
 		logicalTime++
+		log.Printf("Component=Client Event=PublishReqSent ClientID=%s LogicalTime=%d", clientID, logicalTime)
+		
 		_, err := client.Publish(
 			context.Background(),
 			&proto.PublishReq{
