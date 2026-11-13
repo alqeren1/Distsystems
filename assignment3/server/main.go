@@ -22,9 +22,9 @@ import (
 type chatServer struct {
 	proto.UnimplementedChitchatServer
 
-	mu           sync.Mutex
-	logicalClock int64
-	clients      map[string]chan *proto.BroadcastMessage
+	mu          sync.Mutex
+	logicalTime int64
+	clients     map[string]chan *proto.BroadcastMessage
 }
 
 func newChatServer() *chatServer {
@@ -39,6 +39,8 @@ func (s *chatServer) Join(
 ) error {
 
 	clientID := req.ClientId
+	incomingLogicalTime := req.LogicalTime
+	incomingLogicalTime++
 
 	clientChannel := make(chan *proto.BroadcastMessage, 100)
 
@@ -52,8 +54,9 @@ func (s *chatServer) Join(
 		)
 	}
 	s.clients[clientID] = clientChannel
-	s.logicalClock++
-	currentTime := s.logicalClock
+	s.logicalTime++
+
+	currentTime := max(s.logicalTime, incomingLogicalTime)
 	s.mu.Unlock()
 	message := fmt.Sprintf(
 		"Participant %s joined Chit Chat at logical time %d",
@@ -122,8 +125,8 @@ func (s *chatServer) removeClient(clientid string) {
 		s.mu.Unlock()
 		return
 	}
-	s.logicalClock++
-	currentTime := s.logicalClock
+	s.LogicalTime++
+	currentTime := s.logicalTime
 	message := fmt.Sprintf(
 		"Participant %s left Chit Chat at logical time %d",
 		clientid,
@@ -204,8 +207,8 @@ func (s *chatServer) Publish(
 	}
 
 	s.mu.Lock()
-	s.logicalClock++
-	currentTime := s.logicalClock
+	s.LogicalTime++
+	currentTime := s.LogicalTime
 	s.mu.Unlock()
 
 	broadcastMsg := &proto.BroadcastMessage{
