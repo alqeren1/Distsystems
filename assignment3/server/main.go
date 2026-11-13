@@ -57,6 +57,8 @@ func (s *chatServer) Join(
 	s.logicalTime++
 
 	currentTime := max(s.logicalTime, incomingLogicalTime)
+	s.mu.Lock()
+	s.logicalTime = currentTime
 	s.mu.Unlock()
 	message := fmt.Sprintf(
 		"Participant %s joined Chit Chat at logical time %d",
