@@ -22,58 +22,57 @@ import (
 type chatServer struct {
 	proto.UnimplementedChitchatServer
 
-	mu sync.Mutex
+	mu           sync.Mutex
 	logicalClock int64
-	clients map[string] chan *proto.BroadcastMessage
+	clients      map[string]chan *proto.BroadcastMessage
 }
 
 func newChatServer() *chatServer {
-    return &chatServer{
-        clients: make(map[string]chan *proto.BroadcastMessage),
-    }
+	return &chatServer{
+		clients: make(map[string]chan *proto.BroadcastMessage),
+	}
 }
 
 func (s *chatServer) Join(
-    req *proto.JoinReq,
-    stream proto.Chitchat_JoinServer,
+	req *proto.JoinReq,
+	stream proto.Chitchat_JoinServer,
 ) error {
 
-    clientID := req.ClientId
+	clientID := req.ClientId
 
-    clientChannel := make(chan *proto.BroadcastMessage, 100)
+	clientChannel := make(chan *proto.BroadcastMessage, 100)
 
-    s.mu.Lock()
+	s.mu.Lock()
 	// checking if client name is available
 	if _, exists := s.clients[clientID]; exists {
-    s.mu.Unlock()
-    return status.Error(
-        codes.AlreadyExists,
-        "client ID is already in use",
-    )
-}
-    s.clients[clientID] = clientChannel
-    s.logicalClock++
-    currentTime := s.logicalClock
-    s.mu.Unlock()
+		s.mu.Unlock()
+		return status.Error(
+			codes.AlreadyExists,
+			"client ID is already in use",
+		)
+	}
+	s.clients[clientID] = clientChannel
+	s.logicalClock++
+	currentTime := s.logicalClock
+	s.mu.Unlock()
 	message := fmt.Sprintf(
-    "Participant %s joined Chit Chat at logical time %d",
-    clientID,
-    currentTime,
-)
+		"Participant %s joined Chit Chat at logical time %d",
+		clientID,
+		currentTime,
+	)
 	broadcastMsg := &proto.BroadcastMessage{
-		ClientId: clientID,
+		ClientId:    clientID,
 		Content:     message,
 		LogicalTime: currentTime,
-}
-	
+	}
 
 	s.broadcast(broadcastMsg)
 
-    log.Printf(
-        "Component=Server Event=ClientJoin ClientID=%s LogicalTime=%d",
-        clientID,
-        currentTime,
-    )
+	log.Printf(
+		"Component=Server Event=ClientJoin ClientID=%s LogicalTime=%d",
+		clientID,
+		currentTime,
+	)
 	//cleanup. It only runs after the whole join function finishes, after for loop ends
 	//needed in the case that client didnt call leave and crashed or just closed the app
 	defer func() {
@@ -85,9 +84,9 @@ func (s *chatServer) Join(
 		)
 	}()
 	//for keeping the connection open, infinate loop
-    
+
 	for {
-    select {
+		select {
 		//If a broadcast message arrives, handle it.
 		case msg, ok := <-clientChannel:
 			if !ok {
@@ -98,104 +97,101 @@ func (s *chatServer) Join(
 				return err
 			}
 			log.Printf(
-			"Component=Server Event=MessageSent ClientID=%s LogicalTime=%d Message=%q",
-			clientID,
-			msg.LogicalTime,
-			msg.Content,
-)
-		// If the gRPC client disconnects, cancels the call, crashes, or the connection dies, 
+				"Component=Server Event=MessageSent ClientID=%s LogicalTime=%d Message=%q",
+				clientID,
+				msg.LogicalTime,
+				msg.Content,
+			)
+		// If the gRPC client disconnects, cancels the call, crashes, or the connection dies,
 		// the stream context becomes done.
 		case <-stream.Context().Done():
 			return nil
-    }
-}
+		}
+	}
 }
 
-func (s *chatServer) removeClient (clientid string)  {
-	
+func (s *chatServer) removeClient(clientid string) {
+
 	s.mu.Lock()
-    clientChannel, exists := s.clients[clientid]
+	clientChannel, exists := s.clients[clientid]
 
 	if exists {
 		delete(s.clients, clientid)
 		close(clientChannel)
-	} else { 
+	} else {
 		s.mu.Unlock()
 		return
 	}
-    s.logicalClock++
-    currentTime := s.logicalClock
+	s.logicalClock++
+	currentTime := s.logicalClock
 	message := fmt.Sprintf(
-    "Participant %s left Chit Chat at logical time %d",
-    clientid,
-    currentTime,
-)
+		"Participant %s left Chit Chat at logical time %d",
+		clientid,
+		currentTime,
+	)
 	broadcastMsg := &proto.BroadcastMessage{
-		ClientId: clientid,
+		ClientId:    clientid,
 		Content:     message,
 		LogicalTime: currentTime,
-}
+	}
 	s.mu.Unlock()
 
 	s.broadcast(broadcastMsg)
 	log.Printf(
-        "Component=Server Event=ClientLeave ClientID=%s LogicalTime=%d",
-        clientid,
-        currentTime,
-    )
-    
+		"Component=Server Event=ClientLeave ClientID=%s LogicalTime=%d",
+		clientid,
+		currentTime,
+	)
 
 }
 
 func (s *chatServer) Leave(
 	ctx context.Context,
-    req *proto.LeaveReq,
-    
-) (*proto.Empty, error) {
+	req *proto.LeaveReq,
 
-    clientID := req.ClientId
+) (*proto.LeaveAccepted, error) {
 
-    
+	clientID := req.ClientId
 
-    s.removeClient(clientID)
+	s.removeClient(clientID)
 
-	
-	return &proto.Empty{}, nil
+	return &proto.LeaveAccepted{}, nil
 
 }
 
 func (s *chatServer) broadcast(msg *proto.BroadcastMessage) {
 	slowClients := []string{}
-    s.mu.Lock()
+	s.mu.Lock()
 	// happens at the end
-    defer func() {
+	defer func() {
 		s.mu.Unlock()
-		//remove slow clients 
-		for _, clientID := range slowClients{
+		//remove slow clients
+		for _, clientID := range slowClients {
 
-		s.removeClient(clientID)
-
-		} }()
-	//send message to all clients
-    for clientID, clientChannel := range s.clients {
-		select{
-		case clientChannel <- msg:
-		// detect slow clients to remove at the end
-		case <- time.After(500 * time.Millisecond):
-			log.Printf(
-			"Component=Server Event=SlowClientTimeout ClientID=%s",
-			clientID,)
-			slowClients = append(slowClients,clientID)
+			s.removeClient(clientID)
 
 		}
-        
-    }
+	}()
+	//send message to all clients
+	for clientID, clientChannel := range s.clients {
+		select {
+		case clientChannel <- msg:
+		// detect slow clients to remove at the end
+		case <-time.After(500 * time.Millisecond):
+			log.Printf(
+				"Component=Server Event=SlowClientTimeout ClientID=%s",
+				clientID)
+			slowClients = append(slowClients, clientID)
+
+		}
+
+	}
 }
 
 func (s *chatServer) Publish(
-    ctx context.Context,
-    req *proto.PublishReq,
-) (*proto.Empty, error) {
+	ctx context.Context,
+	req *proto.PublishReq,
+) (*proto.PublishAccepted, error) {
 
 	clientID := req.ClientId
 	message := req.Message
@@ -213,19 +209,19 @@ func (s *chatServer) Publish(
 	s.mu.Unlock()
 
 	broadcastMsg := &proto.BroadcastMessage{
-		ClientId: clientID,
+		ClientId:    clientID,
 		Content:     message,
 		LogicalTime: currentTime,
-}
+	}
 
 	s.broadcast(broadcastMsg)
 	log.Printf(
-    "Component=Server Event=MessageBroadcast ClientID=%s LogicalTime=%d Message=%q",
-    clientID,
-    currentTime,
-    message,
-)
-	return &proto.Empty{}, nil
+		"Component=Server Event=MessageBroadcast ClientID=%s LogicalTime=%d Message=%q",
+		clientID,
+		currentTime,
+		message,
+	)
+	return &proto.PublishAccepted{}, nil
 }
 
 func main() {
