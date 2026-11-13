@@ -158,6 +158,9 @@ func (s *chatServer) Leave(
 	s.removeClient(clientID)
 
 	logicalClock := max(timestamp,s.logicalTime)
+	s.mu.Lock()
+	s.logicalTime = logicalClock
+	s.mu.Unlock()
 
 	return &proto.LeaveAccepted{LogicalTime: logicalClock}, nil
 
