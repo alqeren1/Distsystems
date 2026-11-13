@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v7.36.2
-// source: chitchat/grpc/proto/chitchat.proto
+// source: grpc/proto/chitchat.proto
 
 package proto
 
@@ -21,52 +21,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Empty struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Empty) Reset() {
-	*x = Empty{}
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Empty) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Empty) ProtoMessage() {}
-
-func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Empty.ProtoReflect.Descriptor instead.
-func (*Empty) Descriptor() ([]byte, []int) {
-	return file_chitchat_grpc_proto_chitchat_proto_rawDescGZIP(), []int{0}
-}
-
 type JoinReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	LogicalTime   int64                  `protobuf:"varint,2,opt,name=logical_time,json=logicalTime,proto3" json:"logical_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *JoinReq) Reset() {
 	*x = JoinReq{}
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[1]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -78,7 +43,7 @@ func (x *JoinReq) String() string {
 func (*JoinReq) ProtoMessage() {}
 
 func (x *JoinReq) ProtoReflect() protoreflect.Message {
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[1]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -91,7 +56,7 @@ func (x *JoinReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinReq.ProtoReflect.Descriptor instead.
 func (*JoinReq) Descriptor() ([]byte, []int) {
-	return file_chitchat_grpc_proto_chitchat_proto_rawDescGZIP(), []int{1}
+	return file_grpc_proto_chitchat_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *JoinReq) GetClientId() string {
@@ -101,16 +66,24 @@ func (x *JoinReq) GetClientId() string {
 	return ""
 }
 
+func (x *JoinReq) GetLogicalTime() int64 {
+	if x != nil {
+		return x.LogicalTime
+	}
+	return 0
+}
+
 type LeaveReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	LogicalTime   int64                  `protobuf:"varint,2,opt,name=logical_time,json=logicalTime,proto3" json:"logical_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LeaveReq) Reset() {
 	*x = LeaveReq{}
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[2]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -122,7 +95,7 @@ func (x *LeaveReq) String() string {
 func (*LeaveReq) ProtoMessage() {}
 
 func (x *LeaveReq) ProtoReflect() protoreflect.Message {
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[2]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,7 +108,7 @@ func (x *LeaveReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveReq.ProtoReflect.Descriptor instead.
 func (*LeaveReq) Descriptor() ([]byte, []int) {
-	return file_chitchat_grpc_proto_chitchat_proto_rawDescGZIP(), []int{2}
+	return file_grpc_proto_chitchat_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LeaveReq) GetClientId() string {
@@ -145,17 +118,69 @@ func (x *LeaveReq) GetClientId() string {
 	return ""
 }
 
+func (x *LeaveReq) GetLogicalTime() int64 {
+	if x != nil {
+		return x.LogicalTime
+	}
+	return 0
+}
+
+type LeaveAccepted struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LogicalTime   int64                  `protobuf:"varint,1,opt,name=logical_time,json=logicalTime,proto3" json:"logical_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LeaveAccepted) Reset() {
+	*x = LeaveAccepted{}
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LeaveAccepted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaveAccepted) ProtoMessage() {}
+
+func (x *LeaveAccepted) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaveAccepted.ProtoReflect.Descriptor instead.
+func (*LeaveAccepted) Descriptor() ([]byte, []int) {
+	return file_grpc_proto_chitchat_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *LeaveAccepted) GetLogicalTime() int64 {
+	if x != nil {
+		return x.LogicalTime
+	}
+	return 0
+}
+
 type PublishReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	LogicalTime   int64                  `protobuf:"varint,3,opt,name=logical_time,json=logicalTime,proto3" json:"logical_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PublishReq) Reset() {
 	*x = PublishReq{}
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[3]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -167,7 +192,7 @@ func (x *PublishReq) String() string {
 func (*PublishReq) ProtoMessage() {}
 
 func (x *PublishReq) ProtoReflect() protoreflect.Message {
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[3]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -180,7 +205,7 @@ func (x *PublishReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishReq.ProtoReflect.Descriptor instead.
 func (*PublishReq) Descriptor() ([]byte, []int) {
-	return file_chitchat_grpc_proto_chitchat_proto_rawDescGZIP(), []int{3}
+	return file_grpc_proto_chitchat_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PublishReq) GetClientId() string {
@@ -197,6 +222,57 @@ func (x *PublishReq) GetMessage() string {
 	return ""
 }
 
+func (x *PublishReq) GetLogicalTime() int64 {
+	if x != nil {
+		return x.LogicalTime
+	}
+	return 0
+}
+
+type PublishAccepted struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LogicalTime   int64                  `protobuf:"varint,1,opt,name=logical_time,json=logicalTime,proto3" json:"logical_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PublishAccepted) Reset() {
+	*x = PublishAccepted{}
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PublishAccepted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PublishAccepted) ProtoMessage() {}
+
+func (x *PublishAccepted) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PublishAccepted.ProtoReflect.Descriptor instead.
+func (*PublishAccepted) Descriptor() ([]byte, []int) {
+	return file_grpc_proto_chitchat_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *PublishAccepted) GetLogicalTime() int64 {
+	if x != nil {
+		return x.LogicalTime
+	}
+	return 0
+}
+
 type BroadcastMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
@@ -208,7 +284,7 @@ type BroadcastMessage struct {
 
 func (x *BroadcastMessage) Reset() {
 	*x = BroadcastMessage{}
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[4]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -220,7 +296,7 @@ func (x *BroadcastMessage) String() string {
 func (*BroadcastMessage) ProtoMessage() {}
 
 func (x *BroadcastMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_chitchat_grpc_proto_chitchat_proto_msgTypes[4]
+	mi := &file_grpc_proto_chitchat_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -233,7 +309,7 @@ func (x *BroadcastMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BroadcastMessage.ProtoReflect.Descriptor instead.
 func (*BroadcastMessage) Descriptor() ([]byte, []int) {
-	return file_chitchat_grpc_proto_chitchat_proto_rawDescGZIP(), []int{4}
+	return file_grpc_proto_chitchat_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BroadcastMessage) GetClientId() string {
@@ -257,56 +333,63 @@ func (x *BroadcastMessage) GetLogicalTime() int64 {
 	return 0
 }
 
-var File_chitchat_grpc_proto_chitchat_proto protoreflect.FileDescriptor
+var File_grpc_proto_chitchat_proto protoreflect.FileDescriptor
 
-const file_chitchat_grpc_proto_chitchat_proto_rawDesc = "" +
+const file_grpc_proto_chitchat_proto_rawDesc = "" +
 	"\n" +
-	"\"chitchat/grpc/proto/chitchat.proto\x12\x05proto\"\a\n" +
-	"\x05Empty\"&\n" +
+	"\x19grpc/proto/chitchat.proto\x12\x05proto\"I\n" +
 	"\aJoinReq\x12\x1b\n" +
-	"\tclient_id\x18\x01 \x01(\tR\bclientId\"'\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12!\n" +
+	"\flogical_time\x18\x02 \x01(\x03R\vlogicalTime\"J\n" +
 	"\bLeaveReq\x12\x1b\n" +
-	"\tclient_id\x18\x01 \x01(\tR\bclientId\"C\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12!\n" +
+	"\flogical_time\x18\x02 \x01(\x03R\vlogicalTime\"2\n" +
+	"\rLeaveAccepted\x12!\n" +
+	"\flogical_time\x18\x01 \x01(\x03R\vlogicalTime\"f\n" +
 	"\n" +
 	"PublishReq\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"l\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12!\n" +
+	"\flogical_time\x18\x03 \x01(\x03R\vlogicalTime\"4\n" +
+	"\x0fPublishAccepted\x12!\n" +
+	"\flogical_time\x18\x01 \x01(\x03R\vlogicalTime\"l\n" +
 	"\x10BroadcastMessage\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12!\n" +
-	"\flogical_time\x18\x03 \x01(\x03R\vlogicalTime2\x91\x01\n" +
+	"\flogical_time\x18\x03 \x01(\x03R\vlogicalTime2\xa3\x01\n" +
 	"\bChitchat\x121\n" +
-	"\x04Join\x12\x0e.proto.JoinReq\x1a\x17.proto.BroadcastMessage0\x01\x12*\n" +
-	"\aPublish\x12\x11.proto.PublishReq\x1a\f.proto.Empty\x12&\n" +
-	"\x05Leave\x12\x0f.proto.LeaveReq\x1a\f.proto.EmptyB\x15Z\x13chitchat/grpc/protob\x06proto3"
+	"\x04Join\x12\x0e.proto.JoinReq\x1a\x17.proto.BroadcastMessage0\x01\x124\n" +
+	"\aPublish\x12\x11.proto.PublishReq\x1a\x16.proto.PublishAccepted\x12.\n" +
+	"\x05Leave\x12\x0f.proto.LeaveReq\x1a\x14.proto.LeaveAcceptedB\x15Z\x13chitchat/grpc/protob\x06proto3"
 
 var (
-	file_chitchat_grpc_proto_chitchat_proto_rawDescOnce sync.Once
-	file_chitchat_grpc_proto_chitchat_proto_rawDescData []byte
+	file_grpc_proto_chitchat_proto_rawDescOnce sync.Once
+	file_grpc_proto_chitchat_proto_rawDescData []byte
 )
 
-func file_chitchat_grpc_proto_chitchat_proto_rawDescGZIP() []byte {
-	file_chitchat_grpc_proto_chitchat_proto_rawDescOnce.Do(func() {
-		file_chitchat_grpc_proto_chitchat_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_chitchat_grpc_proto_chitchat_proto_rawDesc), len(file_chitchat_grpc_proto_chitchat_proto_rawDesc)))
+func file_grpc_proto_chitchat_proto_rawDescGZIP() []byte {
+	file_grpc_proto_chitchat_proto_rawDescOnce.Do(func() {
+		file_grpc_proto_chitchat_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_grpc_proto_chitchat_proto_rawDesc), len(file_grpc_proto_chitchat_proto_rawDesc)))
 	})
-	return file_chitchat_grpc_proto_chitchat_proto_rawDescData
+	return file_grpc_proto_chitchat_proto_rawDescData
 }
 
-var file_chitchat_grpc_proto_chitchat_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_chitchat_grpc_proto_chitchat_proto_goTypes = []any{
-	(*Empty)(nil),            // 0: proto.Empty
-	(*JoinReq)(nil),          // 1: proto.JoinReq
-	(*LeaveReq)(nil),         // 2: proto.LeaveReq
+var file_grpc_proto_chitchat_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_grpc_proto_chitchat_proto_goTypes = []any{
+	(*JoinReq)(nil),          // 0: proto.JoinReq
+	(*LeaveReq)(nil),         // 1: proto.LeaveReq
+	(*LeaveAccepted)(nil),    // 2: proto.LeaveAccepted
 	(*PublishReq)(nil),       // 3: proto.PublishReq
-	(*BroadcastMessage)(nil), // 4: proto.BroadcastMessage
+	(*PublishAccepted)(nil),  // 4: proto.PublishAccepted
+	(*BroadcastMessage)(nil), // 5: proto.BroadcastMessage
 }
-var file_chitchat_grpc_proto_chitchat_proto_depIdxs = []int32{
-	1, // 0: proto.Chitchat.Join:input_type -> proto.JoinReq
+var file_grpc_proto_chitchat_proto_depIdxs = []int32{
+	0, // 0: proto.Chitchat.Join:input_type -> proto.JoinReq
 	3, // 1: proto.Chitchat.Publish:input_type -> proto.PublishReq
-	2, // 2: proto.Chitchat.Leave:input_type -> proto.LeaveReq
-	4, // 3: proto.Chitchat.Join:output_type -> proto.BroadcastMessage
-	0, // 4: proto.Chitchat.Publish:output_type -> proto.Empty
-	0, // 5: proto.Chitchat.Leave:output_type -> proto.Empty
+	1, // 2: proto.Chitchat.Leave:input_type -> proto.LeaveReq
+	5, // 3: proto.Chitchat.Join:output_type -> proto.BroadcastMessage
+	4, // 4: proto.Chitchat.Publish:output_type -> proto.PublishAccepted
+	2, // 5: proto.Chitchat.Leave:output_type -> proto.LeaveAccepted
 	3, // [3:6] is the sub-list for method output_type
 	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -314,26 +397,26 @@ var file_chitchat_grpc_proto_chitchat_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_chitchat_grpc_proto_chitchat_proto_init() }
-func file_chitchat_grpc_proto_chitchat_proto_init() {
-	if File_chitchat_grpc_proto_chitchat_proto != nil {
+func init() { file_grpc_proto_chitchat_proto_init() }
+func file_grpc_proto_chitchat_proto_init() {
+	if File_grpc_proto_chitchat_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chitchat_grpc_proto_chitchat_proto_rawDesc), len(file_chitchat_grpc_proto_chitchat_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_grpc_proto_chitchat_proto_rawDesc), len(file_grpc_proto_chitchat_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_chitchat_grpc_proto_chitchat_proto_goTypes,
-		DependencyIndexes: file_chitchat_grpc_proto_chitchat_proto_depIdxs,
-		MessageInfos:      file_chitchat_grpc_proto_chitchat_proto_msgTypes,
+		GoTypes:           file_grpc_proto_chitchat_proto_goTypes,
+		DependencyIndexes: file_grpc_proto_chitchat_proto_depIdxs,
+		MessageInfos:      file_grpc_proto_chitchat_proto_msgTypes,
 	}.Build()
-	File_chitchat_grpc_proto_chitchat_proto = out.File
-	file_chitchat_grpc_proto_chitchat_proto_goTypes = nil
-	file_chitchat_grpc_proto_chitchat_proto_depIdxs = nil
+	File_grpc_proto_chitchat_proto = out.File
+	file_grpc_proto_chitchat_proto_goTypes = nil
+	file_grpc_proto_chitchat_proto_depIdxs = nil
 }

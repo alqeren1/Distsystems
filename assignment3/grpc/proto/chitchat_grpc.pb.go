@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             v7.36.2
-// source: chitchat/grpc/proto/chitchat.proto
+// source: grpc/proto/chitchat.proto
 
 package proto
 
@@ -29,8 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChitchatClient interface {
 	Join(ctx context.Context, in *JoinReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BroadcastMessage], error)
-	Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*Empty, error)
-	Leave(ctx context.Context, in *LeaveReq, opts ...grpc.CallOption) (*Empty, error)
+	Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*PublishAccepted, error)
+	Leave(ctx context.Context, in *LeaveReq, opts ...grpc.CallOption) (*LeaveAccepted, error)
 }
 
 type chitchatClient struct {
@@ -60,9 +60,9 @@ func (c *chitchatClient) Join(ctx context.Context, in *JoinReq, opts ...grpc.Cal
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Chitchat_JoinClient = grpc.ServerStreamingClient[BroadcastMessage]
 
-func (c *chitchatClient) Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*Empty, error) {
+func (c *chitchatClient) Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*PublishAccepted, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(PublishAccepted)
 	err := c.cc.Invoke(ctx, Chitchat_Publish_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -70,9 +70,9 @@ func (c *chitchatClient) Publish(ctx context.Context, in *PublishReq, opts ...gr
 	return out, nil
 }
 
-func (c *chitchatClient) Leave(ctx context.Context, in *LeaveReq, opts ...grpc.CallOption) (*Empty, error) {
+func (c *chitchatClient) Leave(ctx context.Context, in *LeaveReq, opts ...grpc.CallOption) (*LeaveAccepted, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(LeaveAccepted)
 	err := c.cc.Invoke(ctx, Chitchat_Leave_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -85,8 +85,8 @@ func (c *chitchatClient) Leave(ctx context.Context, in *LeaveReq, opts ...grpc.C
 // for forward compatibility.
 type ChitchatServer interface {
 	Join(*JoinReq, grpc.ServerStreamingServer[BroadcastMessage]) error
-	Publish(context.Context, *PublishReq) (*Empty, error)
-	Leave(context.Context, *LeaveReq) (*Empty, error)
+	Publish(context.Context, *PublishReq) (*PublishAccepted, error)
+	Leave(context.Context, *LeaveReq) (*LeaveAccepted, error)
 	mustEmbedUnimplementedChitchatServer()
 }
 
@@ -100,10 +100,10 @@ type UnimplementedChitchatServer struct{}
 func (UnimplementedChitchatServer) Join(*JoinReq, grpc.ServerStreamingServer[BroadcastMessage]) error {
 	return status.Error(codes.Unimplemented, "method Join not implemented")
 }
-func (UnimplementedChitchatServer) Publish(context.Context, *PublishReq) (*Empty, error) {
+func (UnimplementedChitchatServer) Publish(context.Context, *PublishReq) (*PublishAccepted, error) {
 	return nil, status.Error(codes.Unimplemented, "method Publish not implemented")
 }
-func (UnimplementedChitchatServer) Leave(context.Context, *LeaveReq) (*Empty, error) {
+func (UnimplementedChitchatServer) Leave(context.Context, *LeaveReq) (*LeaveAccepted, error) {
 	return nil, status.Error(codes.Unimplemented, "method Leave not implemented")
 }
 func (UnimplementedChitchatServer) mustEmbedUnimplementedChitchatServer() {}
@@ -197,5 +197,5 @@ var Chitchat_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "chitchat/grpc/proto/chitchat.proto",
+	Metadata: "grpc/proto/chitchat.proto",
 }

@@ -4,23 +4,35 @@ option go_package = "chitchat/grpc/proto";
 
 
 
-message Empty {}
+
 
 message JoinReq {
     string client_id = 1;
+    int64 logical_time = 2;
 
 }
 
 message LeaveReq {
     string client_id = 1;
+    int64 logical_time = 2;
     
+}
+
+message LeaveAccepted {
+    int64 logical_time = 1;
 }
 
 message PublishReq{
     string client_id = 1;
     string message = 2;
+    int64 logical_time = 3;
     
 }
+
+message PublishAccepted {
+    int64 logical_time = 1;
+}
+
 message BroadcastMessage {
     string client_id = 1;
     string content = 2;
@@ -31,7 +43,7 @@ message BroadcastMessage {
 
 service Chitchat{
     rpc Join (JoinReq) returns (stream BroadcastMessage);
-    rpc Publish (PublishReq) returns (Empty);
-    rpc Leave (LeaveReq) returns (Empty);
+    rpc Publish (PublishReq) returns (PublishAccepted);
+    rpc Leave (LeaveReq) returns (LeaveAccepted);
 
 }
