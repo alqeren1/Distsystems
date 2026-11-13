@@ -57,9 +57,11 @@ func (s *chatServer) Join(
 	s.logicalTime++
 
 	currentTime := max(s.logicalTime, incomingLogicalTime)
+	//recieve join req log
 	s.mu.Lock()
-	s.logicalTime = currentTime
+	s.logicalTime = currentTime +1
 	s.mu.Unlock()
+	//sending join req log
 	message := fmt.Sprintf(
 		"Participant %s joined Chit Chat at logical time %d",
 		clientID,
@@ -68,7 +70,7 @@ func (s *chatServer) Join(
 	broadcastMsg := &proto.BroadcastMessage{
 		ClientId:    clientID,
 		Content:     message,
-		LogicalTime: currentTime,
+		LogicalTime: s.logicalTime,
 	}
 
 	s.broadcast(broadcastMsg)
@@ -84,8 +86,9 @@ func (s *chatServer) Join(
 		s.removeClient(clientID)
 
 		log.Printf(
-			"Component=Server Event=ClientDisconnected ClientID=%s",
+			"Component=Server Event=ClientDisconnected ClientID=%s at logical time: %d",
 			clientID,
+			s.logicalTime,
 		)
 	}()
 	//for keeping the connection open, infinate loop
@@ -162,12 +165,14 @@ func (s *chatServer) Leave(
 
 	s.removeClient(clientID)
 
-	logicalClock := max(timestamp,s.logicalTime)
+	logicalClock := max(timestamp,s.logicalTime) 
+	//recieved log
 	s.mu.Lock()
-	s.logicalTime = logicalClock
+	s.logicalTime = logicalClock+1
 	s.mu.Unlock()
+	//sending leave message from server log
 
-	return &proto.LeaveAccepted{LogicalTime: logicalClock}, nil
+	return &proto.LeaveAccepted{LogicalTime: s.logicalTime}, nil
 
 }
 
