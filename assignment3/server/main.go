@@ -39,6 +39,8 @@ func (s *chatServer) Join(
 ) error {
 
 	clientID := req.ClientId
+	incomingLogicalTime := req.LogicalTime
+	incomingLogicalTime++
 
 	clientChannel := make(chan *proto.BroadcastMessage, 100)
 
@@ -53,7 +55,10 @@ func (s *chatServer) Join(
 	}
 	s.clients[clientID] = clientChannel
 	s.logicalTime++
-	currentTime := s.logicalTime
+
+	currentTime := max(s.logicalTime, incomingLogicalTime)
+	s.mu.Lock()
+	s.logicalTime = currentTime
 	s.mu.Unlock()
 	message := fmt.Sprintf(
 		"Participant %s joined Chit Chat at logical time %d",
