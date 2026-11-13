@@ -88,7 +88,7 @@ func main() {
 
 		if text == "/leave" {
 			logicalTime++
-			_, err := client.Leave(
+			leave, err := client.Leave(
 				context.Background(),
 				&proto.LeaveReq{
 					ClientId:    clientID,
@@ -98,8 +98,10 @@ func main() {
 
 			if err != nil {
 				log.Printf("Component=Client Event=LeaveFailed ClientID=%s Error=%q", clientID, err)
+				return
 			}
-
+			logicalTime = max(logicalTime, leave.LogicalTime) + 1
+			log.Printf("Component=Client Event=LeaveSuccess ClientID=%s LogicalTime=%d", clientID, logicalTime)
 			return
 		}
 
