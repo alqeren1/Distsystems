@@ -17,17 +17,20 @@ import (
 
 type auctionServer struct {
 	proto.UnimplementedAuctionServer
+	 proto.UnimplementedReplicationNodesServer
 
 	mu           sync.Mutex
+	isLeader bool
 	highestBid int64
 	highestBidder string
 	bidders      map[string]int64
 	auctionOngoing bool
 }
 
-func newAuctionServer() *auctionServer {
+func newAuctionServer(leader bool) *auctionServer {
 	return &auctionServer{
 		highestBid: 0,
+		isLeader: leader,
 		highestBidder: "",
         bidders:    make(map[string]int64),
 		auctionOngoing: true,
@@ -71,7 +74,11 @@ func (s *auctionServer) Bid(
 	}
 }
 
-func (s *auctionServer) Result(ctx context.Context) (*proto.Outcome, error) {
+func (s *auctionServer) Result(ctx context.Context,
+    req *proto.Empty,) (*proto.Outcome, error) {
+
+	s.mu.Lock()
+    defer s.mu.Unlock()
 
 	return &proto.Outcome{
 		HighestBid: s.highestBid,
@@ -83,16 +90,29 @@ func (s *auctionServer) Result(ctx context.Context) (*proto.Outcome, error) {
 
 func main() {
 	listener, err := net.Listen("tcp", ":50051")
+	leaderN := false
 	if err != nil {
-		log.Fatalf("Component=Server Event=ListenFailed Address=:50051 Error=%q", err)
+		log.Print("Starting the backup node")
+		
+		listener2, err2 := net.Listen("tcp", ":50052")
+		listener = listener2
+		//backup node
+		
+		if err2 != nil {
+		log.Fatalf("Component=Server Event=ListenFailed Address=:50052 Error=%q", err2)}
+	}else{
+		//leader node
+		leaderN = true
+		
 	}
 
 	grpcServer := grpc.NewServer()
-	server := newAuctionServer()
+	server := newAuctionServer(leaderN)
 	proto.RegisterAuctionServer(
 		grpcServer,
 		server,
 	)
+	proto.RegisterReplicationNodesServer(grpcServer, server)
 
 	// Catch Ctrl+C and termination signals so main can finish normally
 	shutdown := make(chan os.Signal, 1)
@@ -113,8 +133,13 @@ func main() {
 
 		close(stopped)
 	}()
-
-	log.Println("Component=Server Event=Startup Port=50051")
+	
+	if leaderN{
+		log.Println("Component=Server Event=Startup Port=50051")
+	}else{
+		log.Println("Component=Server Event=Startup Port=50052")
+	}
+	
 
 	err = grpcServer.Serve(listener)
 	if err != nil {
