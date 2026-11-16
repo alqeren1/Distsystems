@@ -17,21 +17,21 @@ import (
 
 type auctionServer struct {
 	proto.UnimplementedAuctionServer
+	proto.UnimplementedReplicationNodesServer
 
-	mu           sync.Mutex
-	highestBid int64
-	highestBidder string
-	bidders      map[string]int64
+	mu             sync.Mutex
+	highestBid     int64
+	highestBidder  string
+	bidders        map[string]int64
 	auctionOngoing bool
 }
 
 func newAuctionServer() *auctionServer {
 	return &auctionServer{
-		highestBid: 0,
-		highestBidder: "",
-        bidders:    make(map[string]int64),
+		highestBid:     0,
+		highestBidder:  "",
+		bidders:        make(map[string]int64),
 		auctionOngoing: true,
-
 	}
 }
 
@@ -46,27 +46,26 @@ func (s *auctionServer) Bid(
 	s.mu.Lock()
 	// checking if bidder name is available
 	if _, exists := s.bidders[bidderName]; exists {
-	s.mu.Unlock()
-    log.Print("Bidder already registered, placing the bid")
-    } else {
-	s.bidders[bidderName] = bidAmount
-	s.mu.Unlock()
+		s.mu.Unlock()
+		log.Print("Bidder already registered, placing the bid")
+	} else {
+		s.bidders[bidderName] = bidAmount
+		s.mu.Unlock()
 	}
-	
+
 	// Checking if it is an accepted bid
 
-	if s.highestBid<bidAmount{
+	if s.highestBid < bidAmount {
 		s.mu.Lock()
-		log.Printf("Bid accepted by user %s at amount %d!", bidderName,bidAmount)
+		log.Printf("Bid accepted by user %s at amount %d!", bidderName, bidAmount)
 		s.highestBid = bidAmount
 		s.highestBidder = bidderName
 		s.mu.Unlock()
 
-		return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS,}, nil
-	}else{
-		log.Printf("Bid is too low! User %s amount %d needs to be higher than %d!", bidderName,bidAmount,s.highestBid)
-		return &proto.BidAck{Ack: proto.BidAckEnum_FAIL,}, nil
-
+		return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS}, nil
+	} else {
+		log.Printf("Bid is too low! User %s amount %d needs to be higher than %d!", bidderName, bidAmount, s.highestBid)
+		return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
 
 	}
 }
@@ -74,12 +73,18 @@ func (s *auctionServer) Bid(
 func (s *auctionServer) Result(ctx context.Context) (*proto.Outcome, error) {
 
 	return &proto.Outcome{
-		HighestBid: s.highestBid,
+		HighestBid:     s.highestBid,
 		AuctionOngoing: s.auctionOngoing,
-		BidderName: s.highestBidder,
+		BidderName:     s.highestBidder,
 	}, nil
 
 }
+
+func (s *auctionServer) AcceptedBid(ctx context.Context, bid *proto.BidderData) (*proto.Empty, error){
+	s.highestBid = bid.Amount,
+	s.BidderName = bid.BidderName,
+}
+
 
 func main() {
 	listener, err := net.Listen("tcp", ":50051")
