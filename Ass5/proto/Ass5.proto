@@ -8,10 +8,6 @@ enum BidAckEnum{
     EXCEPTION = 2;
 } 
 
-enum AuctionState{
-    ONGOING = 0;
-    CLOSED = 1;
-}
 
 message Empty{
 }
@@ -27,7 +23,7 @@ message BidAck{
 
 message Outcome{
     int64 highest_bid = 1;
-    AuctionState state = 2;
+    bool auction_ongoing = 2;
     string bidder_name = 3;
 }
 
