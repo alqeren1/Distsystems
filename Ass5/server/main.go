@@ -67,74 +67,22 @@ func (s *auctionServer) Bid(
 		s.mu.Unlock()
 
 		return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS,}, nil
-		
-		
-
-
 	}else{
 		log.Printf("Bid is too low! User %s amount %d needs to be higher than %d!", bidderName,bidAmount,s.highestBid)
 		return &proto.BidAck{Ack: proto.BidAckEnum_FAIL,}, nil
 
 
 	}
-	
+}
 
-	
-	//sending join req log
-	message := fmt.Sprintf(
-		"Participant %s joined Chit Chat at logical time %d",
-		clientID,
-		currentTime,
-	)
-	broadcastMsg := &proto.BroadcastMessage{
-		ClientId:    clientID,
-		Content:     message,
-		LogicalTime: s.logicalTime,
-	}
+func (s *auctionServer) Result(ctx context.Context) (*proto.Outcome, error) {
 
-	s.broadcast(broadcastMsg)
+	return &proto.Outcome{
+		HighestBid: s.highestBid,
+		State: s.auctionOngoing,
+		Bidder: s.highestBidder,
+	}, nil
 
-	log.Printf(
-		"Component=Server Event=ClientJoin ClientID=%s LogicalTime=%d",
-		clientID,
-		currentTime,
-	)
-	//cleanup. It only runs after the whole join function finishes, after for loop ends
-	//needed in the case that client didnt call leave and crashed or just closed the app
-	defer func() {
-		s.removeClient(clientID)
-
-		log.Printf(
-			"Component=Server Event=ClientDisconnected ClientID=%s at logical time: %d",
-			clientID,
-			s.logicalTime,
-		)
-	}()
-	//for keeping the connection open, infinate loop
-
-	for {
-		select {
-		//If a broadcast message arrives, handle it.
-		case msg, ok := <-clientChannel:
-			if !ok {
-				return nil
-			}
-
-			if err := stream.Send(msg); err != nil {
-				return err
-			}
-			log.Printf(
-				"Component=Server Event=MessageSent to ClientID=%s LogicalTime=%d Message=%q",
-				clientID,
-				msg.LogicalTime,
-				msg.Content,
-			)
-		// If the gRPC client disconnects, cancels the call, crashes, or the connection dies,
-		// the stream context becomes done.
-		case <-stream.Context().Done():
-			return nil
-		}
-	}
 }
 
 func (s *chatServer) removeClient(clientid string) {

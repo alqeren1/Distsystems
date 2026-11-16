@@ -18,7 +18,7 @@ message Empty{
 
 message BidderData{
     int64 amount = 1;
-    string bidder = 2;
+    int64 bidder_id = 2;
 }
 
 message BidAck{
@@ -28,7 +28,7 @@ message BidAck{
 message Outcome{
     int64 highest_bid = 1;
     AuctionState state = 2;
-    string bidder = 3;
+    int64 bidder_id = 3;
 }
 
 
