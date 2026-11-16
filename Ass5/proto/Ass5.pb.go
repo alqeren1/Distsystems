@@ -70,52 +70,6 @@ func (BidAckEnum) EnumDescriptor() ([]byte, []int) {
 	return file_Ass5_proto_Ass5_proto_rawDescGZIP(), []int{0}
 }
 
-type AuctionState int32
-
-const (
-	AuctionState_ONGOING AuctionState = 0
-	AuctionState_CLOSED  AuctionState = 1
-)
-
-// Enum value maps for AuctionState.
-var (
-	AuctionState_name = map[int32]string{
-		0: "ONGOING",
-		1: "CLOSED",
-	}
-	AuctionState_value = map[string]int32{
-		"ONGOING": 0,
-		"CLOSED":  1,
-	}
-)
-
-func (x AuctionState) Enum() *AuctionState {
-	p := new(AuctionState)
-	*p = x
-	return p
-}
-
-func (x AuctionState) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (AuctionState) Descriptor() protoreflect.EnumDescriptor {
-	return file_Ass5_proto_Ass5_proto_enumTypes[1].Descriptor()
-}
-
-func (AuctionState) Type() protoreflect.EnumType {
-	return &file_Ass5_proto_Ass5_proto_enumTypes[1]
-}
-
-func (x AuctionState) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use AuctionState.Descriptor instead.
-func (AuctionState) EnumDescriptor() ([]byte, []int) {
-	return file_Ass5_proto_Ass5_proto_rawDescGZIP(), []int{1}
-}
-
 type Empty struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -155,7 +109,7 @@ func (*Empty) Descriptor() ([]byte, []int) {
 type BidderData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Amount        int64                  `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	Bidder        string                 `protobuf:"bytes,2,opt,name=bidder,proto3" json:"bidder,omitempty"`
+	BidderName    string                 `protobuf:"bytes,2,opt,name=bidder_name,json=bidderName,proto3" json:"bidder_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -197,9 +151,9 @@ func (x *BidderData) GetAmount() int64 {
 	return 0
 }
 
-func (x *BidderData) GetBidder() string {
+func (x *BidderData) GetBidderName() string {
 	if x != nil {
-		return x.Bidder
+		return x.BidderName
 	}
 	return ""
 }
@@ -249,12 +203,12 @@ func (x *BidAck) GetAck() BidAckEnum {
 }
 
 type Outcome struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	HighestBid    int64                  `protobuf:"varint,1,opt,name=highest_bid,json=highestBid,proto3" json:"highest_bid,omitempty"`
-	State         AuctionState           `protobuf:"varint,2,opt,name=state,proto3,enum=proto.AuctionState" json:"state,omitempty"`
-	Bidder        string                 `protobuf:"bytes,3,opt,name=bidder,proto3" json:"bidder,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	HighestBid     int64                  `protobuf:"varint,1,opt,name=highest_bid,json=highestBid,proto3" json:"highest_bid,omitempty"`
+	AuctionOngoing bool                   `protobuf:"varint,2,opt,name=auction_ongoing,json=auctionOngoing,proto3" json:"auction_ongoing,omitempty"`
+	BidderName     string                 `protobuf:"bytes,3,opt,name=bidder_name,json=bidderName,proto3" json:"bidder_name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Outcome) Reset() {
@@ -294,16 +248,16 @@ func (x *Outcome) GetHighestBid() int64 {
 	return 0
 }
 
-func (x *Outcome) GetState() AuctionState {
+func (x *Outcome) GetAuctionOngoing() bool {
 	if x != nil {
-		return x.State
+		return x.AuctionOngoing
 	}
-	return AuctionState_ONGOING
+	return false
 }
 
-func (x *Outcome) GetBidder() string {
+func (x *Outcome) GetBidderName() string {
 	if x != nil {
-		return x.Bidder
+		return x.BidderName
 	}
 	return ""
 }
@@ -313,33 +267,35 @@ var File_Ass5_proto_Ass5_proto protoreflect.FileDescriptor
 const file_Ass5_proto_Ass5_proto_rawDesc = "" +
 	"\n" +
 	"\x15Ass5/proto/Ass5.proto\x12\x05proto\"\a\n" +
-	"\x05Empty\"<\n" +
+	"\x05Empty\"E\n" +
 	"\n" +
 	"BidderData\x12\x16\n" +
-	"\x06amount\x18\x01 \x01(\x03R\x06amount\x12\x16\n" +
-	"\x06bidder\x18\x02 \x01(\tR\x06bidder\"-\n" +
+	"\x06amount\x18\x01 \x01(\x03R\x06amount\x12\x1f\n" +
+	"\vbidder_name\x18\x02 \x01(\tR\n" +
+	"bidderName\"-\n" +
 	"\x06BidAck\x12#\n" +
-	"\x03ack\x18\x01 \x01(\x0e2\x11.proto.BidAckEnumR\x03ack\"m\n" +
+	"\x03ack\x18\x01 \x01(\x0e2\x11.proto.BidAckEnumR\x03ack\"t\n" +
 	"\aOutcome\x12\x1f\n" +
 	"\vhighest_bid\x18\x01 \x01(\x03R\n" +
-	"highestBid\x12)\n" +
-	"\x05state\x18\x02 \x01(\x0e2\x13.proto.AuctionStateR\x05state\x12\x16\n" +
-	"\x06bidder\x18\x03 \x01(\tR\x06bidder*2\n" +
+	"highestBid\x12'\n" +
+	"\x0fauction_ongoing\x18\x02 \x01(\bR\x0eauctionOngoing\x12\x1f\n" +
+	"\vbidder_name\x18\x03 \x01(\tR\n" +
+	"bidderName*2\n" +
 	"\n" +
 	"BidAckEnum\x12\b\n" +
 	"\x04FAIL\x10\x00\x12\v\n" +
 	"\aSUCCESS\x10\x01\x12\r\n" +
-	"\tEXCEPTION\x10\x02*'\n" +
-	"\fAuctionState\x12\v\n" +
-	"\aONGOING\x10\x00\x12\n" +
-	"\n" +
-	"\x06CLOSED\x10\x012Z\n" +
+	"\tEXCEPTION\x10\x022Z\n" +
 	"\aAuction\x12'\n" +
 	"\x03Bid\x12\x11.proto.BidderData\x1a\r.proto.BidAck\x12&\n" +
-	"\x06Result\x12\f.proto.Empty\x1a\x0e.proto.Outcome2B\n" +
+	"\x06Result\x12\f.proto.Empty\x1a\x0e.proto.Outcome2\xfa\x01\n" +
 	"\x10ReplicationNodes\x12.\n" +
 	"\n" +
-	"ForwardBid\x12\x11.proto.BidderData\x1a\r.proto.BidAckB\x0fZ\rAuction/protob\x06proto3"
+	"ForwardBid\x12\x11.proto.BidderData\x1a\r.proto.BidAck\x12-\n" +
+	"\rForwardResult\x12\f.proto.Empty\x1a\x0e.proto.Outcome\x12.\n" +
+	"\vAcceptedBid\x12\x11.proto.BidderData\x1a\f.proto.Empty\x12*\n" +
+	"\fStartAuction\x12\f.proto.Empty\x1a\f.proto.Empty\x12+\n" +
+	"\rAuctionClosed\x12\f.proto.Empty\x1a\f.proto.EmptyB\x0fZ\rAuction/protob\x06proto3"
 
 var (
 	file_Ass5_proto_Ass5_proto_rawDescOnce sync.Once
@@ -353,30 +309,36 @@ func file_Ass5_proto_Ass5_proto_rawDescGZIP() []byte {
 	return file_Ass5_proto_Ass5_proto_rawDescData
 }
 
-var file_Ass5_proto_Ass5_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_Ass5_proto_Ass5_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_Ass5_proto_Ass5_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_Ass5_proto_Ass5_proto_goTypes = []any{
 	(BidAckEnum)(0),    // 0: proto.BidAckEnum
-	(AuctionState)(0),  // 1: proto.AuctionState
-	(*Empty)(nil),      // 2: proto.Empty
-	(*BidderData)(nil), // 3: proto.BidderData
-	(*BidAck)(nil),     // 4: proto.BidAck
-	(*Outcome)(nil),    // 5: proto.Outcome
+	(*Empty)(nil),      // 1: proto.Empty
+	(*BidderData)(nil), // 2: proto.BidderData
+	(*BidAck)(nil),     // 3: proto.BidAck
+	(*Outcome)(nil),    // 4: proto.Outcome
 }
 var file_Ass5_proto_Ass5_proto_depIdxs = []int32{
 	0, // 0: proto.BidAck.ack:type_name -> proto.BidAckEnum
-	1, // 1: proto.Outcome.state:type_name -> proto.AuctionState
-	3, // 2: proto.Auction.Bid:input_type -> proto.BidderData
-	2, // 3: proto.Auction.Result:input_type -> proto.Empty
-	3, // 4: proto.ReplicationNodes.ForwardBid:input_type -> proto.BidderData
-	4, // 5: proto.Auction.Bid:output_type -> proto.BidAck
-	5, // 6: proto.Auction.Result:output_type -> proto.Outcome
-	4, // 7: proto.ReplicationNodes.ForwardBid:output_type -> proto.BidAck
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 1: proto.Auction.Bid:input_type -> proto.BidderData
+	1, // 2: proto.Auction.Result:input_type -> proto.Empty
+	2, // 3: proto.ReplicationNodes.ForwardBid:input_type -> proto.BidderData
+	1, // 4: proto.ReplicationNodes.ForwardResult:input_type -> proto.Empty
+	2, // 5: proto.ReplicationNodes.AcceptedBid:input_type -> proto.BidderData
+	1, // 6: proto.ReplicationNodes.StartAuction:input_type -> proto.Empty
+	1, // 7: proto.ReplicationNodes.AuctionClosed:input_type -> proto.Empty
+	3, // 8: proto.Auction.Bid:output_type -> proto.BidAck
+	4, // 9: proto.Auction.Result:output_type -> proto.Outcome
+	3, // 10: proto.ReplicationNodes.ForwardBid:output_type -> proto.BidAck
+	4, // 11: proto.ReplicationNodes.ForwardResult:output_type -> proto.Outcome
+	1, // 12: proto.ReplicationNodes.AcceptedBid:output_type -> proto.Empty
+	1, // 13: proto.ReplicationNodes.StartAuction:output_type -> proto.Empty
+	1, // 14: proto.ReplicationNodes.AuctionClosed:output_type -> proto.Empty
+	8, // [8:15] is the sub-list for method output_type
+	1, // [1:8] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_Ass5_proto_Ass5_proto_init() }
@@ -389,7 +351,7 @@ func file_Ass5_proto_Ass5_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_Ass5_proto_Ass5_proto_rawDesc), len(file_Ass5_proto_Ass5_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   2,

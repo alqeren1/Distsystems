@@ -8,17 +8,13 @@ enum BidAckEnum{
     EXCEPTION = 2;
 } 
 
-enum AuctionState{
-    ONGOING = 0;
-    CLOSED = 1;
-}
 
 message Empty{
 }
 
 message BidderData{
     int64 amount = 1;
-    int64 bidder_id = 2;
+    string bidder_name = 2;
 }
 
 message BidAck{
@@ -27,8 +23,8 @@ message BidAck{
 
 message Outcome{
     int64 highest_bid = 1;
-    AuctionState state = 2;
-    int64 bidder_id = 3;
+    bool auction_ongoing = 2;
+    string bidder_name = 3;
 }
 
 
@@ -41,5 +37,9 @@ service Auction{
 
 service ReplicationNodes{
     rpc ForwardBid (BidderData) returns (BidAck);
+    rpc ForwardResult (Empty) returns (Outcome);
+    rpc AcceptedBid (BidderData) returns (Empty);
+    rpc StartAuction (Empty) returns (Empty);
+    rpc AuctionClosed (Empty) returns (Empty);
 }
 

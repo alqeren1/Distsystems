@@ -159,7 +159,11 @@ var Auction_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ReplicationNodes_ForwardBid_FullMethodName = "/proto.ReplicationNodes/ForwardBid"
+	ReplicationNodes_ForwardBid_FullMethodName    = "/proto.ReplicationNodes/ForwardBid"
+	ReplicationNodes_ForwardResult_FullMethodName = "/proto.ReplicationNodes/ForwardResult"
+	ReplicationNodes_AcceptedBid_FullMethodName   = "/proto.ReplicationNodes/AcceptedBid"
+	ReplicationNodes_StartAuction_FullMethodName  = "/proto.ReplicationNodes/StartAuction"
+	ReplicationNodes_AuctionClosed_FullMethodName = "/proto.ReplicationNodes/AuctionClosed"
 )
 
 // ReplicationNodesClient is the client API for ReplicationNodes service.
@@ -167,6 +171,10 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReplicationNodesClient interface {
 	ForwardBid(ctx context.Context, in *BidderData, opts ...grpc.CallOption) (*BidAck, error)
+	ForwardResult(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Outcome, error)
+	AcceptedBid(ctx context.Context, in *BidderData, opts ...grpc.CallOption) (*Empty, error)
+	StartAuction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	AuctionClosed(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type replicationNodesClient struct {
@@ -187,11 +195,55 @@ func (c *replicationNodesClient) ForwardBid(ctx context.Context, in *BidderData,
 	return out, nil
 }
 
+func (c *replicationNodesClient) ForwardResult(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Outcome, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Outcome)
+	err := c.cc.Invoke(ctx, ReplicationNodes_ForwardResult_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *replicationNodesClient) AcceptedBid(ctx context.Context, in *BidderData, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, ReplicationNodes_AcceptedBid_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *replicationNodesClient) StartAuction(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, ReplicationNodes_StartAuction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *replicationNodesClient) AuctionClosed(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, ReplicationNodes_AuctionClosed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReplicationNodesServer is the server API for ReplicationNodes service.
 // All implementations must embed UnimplementedReplicationNodesServer
 // for forward compatibility.
 type ReplicationNodesServer interface {
 	ForwardBid(context.Context, *BidderData) (*BidAck, error)
+	ForwardResult(context.Context, *Empty) (*Outcome, error)
+	AcceptedBid(context.Context, *BidderData) (*Empty, error)
+	StartAuction(context.Context, *Empty) (*Empty, error)
+	AuctionClosed(context.Context, *Empty) (*Empty, error)
 	mustEmbedUnimplementedReplicationNodesServer()
 }
 
@@ -204,6 +256,18 @@ type UnimplementedReplicationNodesServer struct{}
 
 func (UnimplementedReplicationNodesServer) ForwardBid(context.Context, *BidderData) (*BidAck, error) {
 	return nil, status.Error(codes.Unimplemented, "method ForwardBid not implemented")
+}
+func (UnimplementedReplicationNodesServer) ForwardResult(context.Context, *Empty) (*Outcome, error) {
+	return nil, status.Error(codes.Unimplemented, "method ForwardResult not implemented")
+}
+func (UnimplementedReplicationNodesServer) AcceptedBid(context.Context, *BidderData) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method AcceptedBid not implemented")
+}
+func (UnimplementedReplicationNodesServer) StartAuction(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartAuction not implemented")
+}
+func (UnimplementedReplicationNodesServer) AuctionClosed(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method AuctionClosed not implemented")
 }
 func (UnimplementedReplicationNodesServer) mustEmbedUnimplementedReplicationNodesServer() {}
 func (UnimplementedReplicationNodesServer) testEmbeddedByValue()                          {}
@@ -244,6 +308,78 @@ func _ReplicationNodes_ForwardBid_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReplicationNodes_ForwardResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReplicationNodesServer).ForwardResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReplicationNodes_ForwardResult_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReplicationNodesServer).ForwardResult(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReplicationNodes_AcceptedBid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BidderData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReplicationNodesServer).AcceptedBid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReplicationNodes_AcceptedBid_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReplicationNodesServer).AcceptedBid(ctx, req.(*BidderData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReplicationNodes_StartAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReplicationNodesServer).StartAuction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReplicationNodes_StartAuction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReplicationNodesServer).StartAuction(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReplicationNodes_AuctionClosed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReplicationNodesServer).AuctionClosed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReplicationNodes_AuctionClosed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReplicationNodesServer).AuctionClosed(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReplicationNodes_ServiceDesc is the grpc.ServiceDesc for ReplicationNodes service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -254,6 +390,22 @@ var ReplicationNodes_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ForwardBid",
 			Handler:    _ReplicationNodes_ForwardBid_Handler,
+		},
+		{
+			MethodName: "ForwardResult",
+			Handler:    _ReplicationNodes_ForwardResult_Handler,
+		},
+		{
+			MethodName: "AcceptedBid",
+			Handler:    _ReplicationNodes_AcceptedBid_Handler,
+		},
+		{
+			MethodName: "StartAuction",
+			Handler:    _ReplicationNodes_StartAuction_Handler,
+		},
+		{
+			MethodName: "AuctionClosed",
+			Handler:    _ReplicationNodes_AuctionClosed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

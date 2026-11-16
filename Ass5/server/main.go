@@ -44,7 +44,7 @@ func (s *auctionServer) Bid(
 	req *proto.BidderData,
 ) (*proto.BidAck, error) {
 
-	bidderName := req.Bidder
+	bidderName := req.BidderName
 	bidAmount := req.Amount
 
 	s.mu.Lock()
@@ -79,8 +79,8 @@ func (s *auctionServer) Result(ctx context.Context) (*proto.Outcome, error) {
 
 	return &proto.Outcome{
 		HighestBid: s.highestBid,
-		State: s.auctionOngoing,
-		Bidder: s.highestBidder,
+		AuctionOngoing: s.auctionOngoing,
+		BidderName: s.highestBidder,
 	}, nil
 
 }
