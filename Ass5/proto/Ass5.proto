@@ -2,35 +2,44 @@ syntax = "proto3";
 package proto;
 option go_package = "Auction/proto";
 
+enum BidAckEnum{
+    FAIL = 0;
+    SUCCESS = 1;
+    EXCEPTION = 2;
+} 
 
+enum AuctionState{
+    ONGOING = 0;
+    CLOSED = 1;
+}
 
 message Empty{
-
 }
 
 message BidderData{
     int64 amount = 1;
-    int64 bidder_id = 2;
+    string bidder = 2;
 }
 
-message AckData{
-    string ack = 1;
+message BidAck{
+    BidAckEnum ack = 1;
 }
 
 message Outcome{
     int64 highest_bid = 1;
-    string bid_result = 2;
+    AuctionState state = 2;
+    string bidder = 3;
 }
 
 
 
 service Auction{
-    rpc Bid (BidderData) returns (AckData);
+    rpc Bid (BidderData) returns (BidAck);
     rpc Result (Empty) returns (Outcome);
 }
 
 
 service ReplicationNodes{
-    rpc ForwardBid (BidderData) returns (AckData);
+    rpc ForwardBid (BidderData) returns (BidAck);
 }
 
