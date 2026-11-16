@@ -1,0 +1,36 @@
+syntax = "proto3";
+package proto;
+option go_package = "Auction/proto";
+
+
+
+message Empty{
+
+}
+
+message BidderData{
+    int64 amount = 1;
+    int64 bidder_id = 2;
+}
+
+message AckData{
+    string ack = 1;
+}
+
+message Outcome{
+    int64 highest_bid = 1;
+    string bid_result = 2;
+}
+
+
+
+service Auction{
+    rpc Bid (BidderData) returns (AckData);
+    rpc Result (Empty) returns (Outcome);
+}
+
+
+service ReplicationNodes{
+    rpc ForwardBid (BidderData) returns (AckData);
+}
+
