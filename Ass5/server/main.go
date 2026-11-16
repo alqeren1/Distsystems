@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -10,13 +9,10 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"unicode/utf8"
 
 	proto "Auction/proto"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type auctionServer struct {
@@ -83,141 +79,6 @@ func (s *auctionServer) Result(ctx context.Context) (*proto.Outcome, error) {
 		BidderName: s.highestBidder,
 	}, nil
 
-}
-
-func (s *chatServer) removeClient(clientid string) {
-
-	s.mu.Lock()
-	clientChannel, exists := s.clients[clientid]
-
-	if exists {
-		delete(s.clients, clientid)
-		close(clientChannel)
-	} else {
-		s.mu.Unlock()
-		return
-	}
-	s.logicalTime++
-	currentTime := s.logicalTime
-	message := fmt.Sprintf(
-		"Participant %s left Chit Chat at logical time %d",
-		clientid,
-		currentTime,
-	)
-	broadcastMsg := &proto.BroadcastMessage{
-		ClientId:    clientid,
-		Content:     message,
-		LogicalTime: currentTime,
-	}
-	s.mu.Unlock()
-
-	s.broadcast(broadcastMsg)
-	log.Printf(
-		"Component=Server Event=ClientLeave ClientID=%s LogicalTime=%d",
-		clientid,
-		currentTime,
-	)
-
-}
-
-func (s *chatServer) Leave(
-	ctx context.Context,
-	req *proto.LeaveReq,
-
-) (*proto.LeaveAccepted, error) {
-
-	clientID := req.ClientId
-	timestamp := req.LogicalTime
-	timestamp ++
-
-	s.removeClient(clientID)
-
-	logicalClock := max(timestamp,s.logicalTime) 
-	//recieved log
-	s.mu.Lock()
-	s.logicalTime = logicalClock+1
-	s.mu.Unlock()
-	//sending leave message from server log
-
-	return &proto.LeaveAccepted{LogicalTime: s.logicalTime}, nil
-
-}
-
-func (s *chatServer) broadcast(msg *proto.BroadcastMessage) {
-	slowClients := []string{}
-	s.mu.Lock()
-	// happens at the end
-	defer func() {
-		s.mu.Unlock()
-		//remove slow clients
-		for _, clientID := range slowClients {
-
-			s.removeClient(clientID)
-
-		}
-	}()
-	//send message to all clients
-	for clientID, clientChannel := range s.clients {
-		select {
-		case clientChannel <- msg:
-		// detect slow clients to remove at the end
-		case <-time.After(500 * time.Millisecond):
-			log.Printf(
-				"Component=Server Event=SlowClientTimeout ClientID=%s",
-				clientID)
-			slowClients = append(slowClients, clientID)
-
-		}
-
-	}
-}
-
-func (s *chatServer) Publish(
-	ctx context.Context,
-	req *proto.PublishReq,
-) (*proto.PublishAccepted, error) {
-
-	clientID := req.ClientId
-	message := req.Message
-	clientclock := req.LogicalTime
-
-	if !utf8.ValidString(message) {
-		return nil, status.Error(codes.InvalidArgument, "message must be valid UTF-8")
-	}
-	if utf8.RuneCountInString(message) > 128 {
-		return nil, status.Error(codes.InvalidArgument, "message exceeds 128 characters")
-	}
-
-	s.mu.Lock()
-	correctTime := max(clientclock,s.logicalTime) + 1
-	s.logicalTime = correctTime
-	
-
-
-	log.Printf(
-		"Component=Server Event=MessageReqRecieved ClientID=%s LogicalTime=%d Message=%q",
-		clientID,
-		correctTime,
-		message,
-	)
-	
-	s.logicalTime++
-	correctTime = s.logicalTime
-	
-	broadcastMsg := &proto.BroadcastMessage{
-		ClientId:    clientID,
-		Content:     message,
-		LogicalTime: correctTime,
-	}
-	s.mu.Unlock()
-	s.broadcast(broadcastMsg)
-	log.Printf(
-		"Component=Server Event=MessageBroadcast ClientID=%s LogicalTime=%d Message=%q",
-		clientID,
-		correctTime,
-		message,
-	)
-	return &proto.PublishAccepted{}, nil
 }
 
 func main() {
