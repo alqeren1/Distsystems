@@ -80,11 +80,14 @@ func (s *auctionServer) Result(ctx context.Context) (*proto.Outcome, error) {
 
 }
 
-func (s *auctionServer) AcceptedBid(ctx context.Context, bid *proto.BidderData) (*proto.Empty, error){
-	s.highestBid = bid.Amount,
-	s.BidderName = bid.BidderName,
-}
+func (s *auctionServer) AcceptedBid(ctx context.Context, bid *proto.BidderData) (*proto.Empty, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.highestBid = bid.Amount
+	s.highestBidder = bid.BidderName
 
+	return &proto.Empty{}, nil
+}
 
 func main() {
 	listener, err := net.Listen("tcp", ":50051")
