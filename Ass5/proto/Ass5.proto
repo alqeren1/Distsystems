@@ -18,7 +18,7 @@ message Empty{
 
 message BidderData{
     int64 amount = 1;
-    int64 bidder_id = 2;
+    string bidder_name = 2;
 }
 
 message BidAck{
@@ -28,7 +28,7 @@ message BidAck{
 message Outcome{
     int64 highest_bid = 1;
     AuctionState state = 2;
-    int64 bidder_id = 3;
+    string bidder_name = 3;
 }
 
 
@@ -41,5 +41,9 @@ service Auction{
 
 service ReplicationNodes{
     rpc ForwardBid (BidderData) returns (BidAck);
+    rpc ForwardResult (Empty) returns (Outcome);
+    rpc AcceptedBid (BidderData) returns (Empty);
+    rpc StartAuction (Empty) returns (Empty);
+    rpc AuctionClosed (Empty) returns (Empty);
 }
 
