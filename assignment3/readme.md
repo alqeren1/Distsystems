@@ -16,8 +16,8 @@ Enter a unique username, then type messages and press enter to send.
 
 Type `/leave` to leave.
 
-![Server and client logs](serverlogs.png)
+![Server and client logs](serverlogs2.png)
 Server Logs
 
-![Server and client logs](clientlogs.png)
+![Server and client logs](clientlogs2.png)
 Client Logs
