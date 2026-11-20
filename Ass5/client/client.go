@@ -34,7 +34,6 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	bidderID := scanner.Text()
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	for scanner.Scan() {
 
 		text := strings.Split(scanner.Text(), " ")
@@ -50,8 +49,9 @@ func main() {
 					personalMaxBid = current_bid
 
 					log.Printf("Component=Client Event=BidPlaced BidderID=%s Amount=%d", bidderID, current_bid)
-
-					bidattempt, _ := bidderClient.Bid(
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					defer cancel()
+					bidattempt, err := bidderClient.Bid(
 						ctx,
 						&proto.BidderData{
 							BidderName: bidderID,
@@ -65,8 +65,10 @@ func main() {
 							log.Fatalf("Component=Client Event=BackupConnectionSetupFailed Address=%s Error=%q", backupServerAddr, err)
 						}
 						bidderClient = proto.NewAuctionClient(conn)
-						bidattempt, _ = bidderClient.Bid(
-							ctx,
+						retryCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
+						bidattempt, err = bidderClient.Bid(
+							retryCtx,
 							&proto.BidderData{
 								BidderName: bidderID,
 								Amount:     int64(current_bid),
@@ -97,8 +99,9 @@ func main() {
 		} else if text[0] == "result" {
 
 			log.Printf("Component=Client Event=StatusRequest BidderID=%s MaxBid=%d", bidderID, personalMaxBid)
-
-			current_winner, _ := bidderClient.Result(ctx, &proto.Empty{})
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			current_winner, err := bidderClient.Result(ctx, &proto.Empty{})
 			if errors.Is(err, context.DeadlineExceeded) {
 				conn.Close()
 				conn, err = grpc.Dial(backupServerAddr, grpc.WithInsecure())
@@ -106,7 +109,9 @@ func main() {
 					log.Fatalf("Component=Client Event=BackupConnectionSetupFailed Address=%s Error=%q", backupServerAddr, err)
 				}
 				bidderClient = proto.NewAuctionClient(conn)
-				current_winner, _ = bidderClient.Result(ctx, &proto.Empty{})
+				retryCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				current_winner, err = bidderClient.Result(retryCtx, &proto.Empty{})
 				if errors.Is(err, context.DeadlineExceeded) {
 					log.Fatalf("Component=Client Event=BackupServerUnreachable Address=%s Error=%q", backupServerAddr, err)
 				}
