@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -13,6 +14,9 @@ import (
 	proto "Auction/proto"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type auctionServer struct {
@@ -25,6 +29,8 @@ type auctionServer struct {
 	highestBidder string
 	bidders      map[string]int64
 	auctionOngoing bool
+
+	peer proto.ReplicationNodesClient 
 }
 
 func newAuctionServer(leader bool) *auctionServer {
@@ -43,36 +49,153 @@ func (s *auctionServer) Bid(
 	req *proto.BidderData,
 ) (*proto.BidAck, error) {
 
+	s.mu.Lock()
+	if !s.auctionOngoing {
+		s.mu.Unlock()
+		fmt.Println("Auction is not ongoing anymore!")
+		return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
+	}
+	s.mu.Unlock()
+
 	bidderName := req.BidderName
 	bidAmount := req.Amount
 
 	s.mu.Lock()
-	// checking if bidder name is available
-	if _, exists := s.bidders[bidderName]; exists {
+	leader := s.isLeader
 	s.mu.Unlock()
-    log.Print("Bidder already registered, placing the bid")
-    } else {
-	s.bidders[bidderName] = bidAmount
-	s.mu.Unlock()
-	}
-	
-	// Checking if it is an accepted bid
 
-	if s.highestBid<bidAmount{
-		s.mu.Lock()
-		log.Printf("Bid accepted by user %s at amount %d!", bidderName,bidAmount)
+	skipForward := false // ADDED
+
+	if !leader {
+		// Backup forwards the bid to the leader
+		forwardCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		response, err := s.peer.ForwardBid(forwardCtx, req)
+		cancel()
+
+		if err == nil {
+			return response, nil
+		}
+
+		if ctx.Err() != nil {
+			return nil, err
+		}
+
+		if status.Code(err) == codes.DeadlineExceeded ||
+			status.Code(err) == codes.Unavailable {
+
+			log.Println("Leader unreachable! Taking over.")
+
+			s.mu.Lock()
+			s.isLeader = true
+			s.mu.Unlock()
+
+			skipForward = true // ADDED: Don't forward again
+		} else {
+			return nil, err
+		}
+	}
+
+	// Leader replicates to backup, unless peer is unreachable
+	if !skipForward { // ADDED
+
+		forwardCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		response, err := s.peer.ForwardBid(forwardCtx, req)
+		cancel()
+
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil, err
+			}
+
+			if status.Code(err) == codes.DeadlineExceeded ||
+				status.Code(err) == codes.Unavailable {
+
+				log.Println("Backup unreachable! Continuing with bid!")
+
+			} else {
+				log.Printf("Other gRPC error: %v", err)
+				return nil, err
+			}
+
+		} else {
+
+			if response.GetAck() == proto.BidAckEnum_SUCCESS {
+				fmt.Println("Bid accepted on backup node")
+
+			} else if response.GetAck() == proto.BidAckEnum_FAIL {
+				fmt.Println("Bid rejected on backup node")
+				return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
+
+			} else if response.GetAck() == proto.BidAckEnum_EXCEPTION {
+				fmt.Println("Auction ended on backup node")
+				return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
+			}
+		}
+	}
+
+	// Check and accept bid locally
+	s.mu.Lock()
+
+	if s.highestBid < bidAmount {
+		s.bidders[bidderName] = bidAmount
+
+		log.Printf("Bid accepted by user %s at amount %d!",
+			bidderName, bidAmount)
+
 		s.highestBid = bidAmount
 		s.highestBidder = bidderName
 		s.mu.Unlock()
 
-		return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS,}, nil
-	}else{
-		log.Printf("Bid is too low! User %s amount %d needs to be higher than %d!", bidderName,bidAmount,s.highestBid)
-		return &proto.BidAck{Ack: proto.BidAckEnum_FAIL,}, nil
+		return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS}, nil
 
+	} else {
+		log.Printf("Bid is too low! User %s amount %d needs to be higher than %d!",
+			bidderName, bidAmount, s.highestBid)
 
+		s.mu.Unlock()
+
+		return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
 	}
 }
+func (s *auctionServer) ForwardBid(
+    ctx context.Context,
+    req *proto.BidderData,
+) (*proto.BidAck, error) {
+
+   
+	s.mu.Lock()
+    if !s.auctionOngoing {
+		s.mu.Unlock()
+        return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
+    }
+
+	
+	leader := s.isLeader
+	
+
+	if leader {
+		s.mu.Unlock()
+		return s.Bid(ctx, req)
+	}
+	
+	
+	
+
+    if req.Amount <= s.highestBid {
+		s.mu.Unlock()
+        return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
+    }
+	s.bidders[req.BidderName] = req.Amount
+    s.highestBid = req.Amount
+    s.highestBidder = req.BidderName
+    
+	
+
+    log.Printf("Replicated bid from %s: %d", req.BidderName, req.Amount)
+	s.mu.Unlock()
+    return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS}, nil
+}
+
 
 func (s *auctionServer) Result(ctx context.Context,
     req *proto.Empty,) (*proto.Outcome, error) {
@@ -108,6 +231,26 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	server := newAuctionServer(leaderN)
+	// Determine the other node's address
+	peerAddress := "localhost:50051"
+
+	if leaderN {
+		peerAddress = "localhost:50052"
+	}
+
+	// Create one reusable gRPC connection
+	conn, err := grpc.NewClient(
+		peerAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create peer client: %v", err)
+	}
+	defer conn.Close()
+
+	// Save the replication client in the server
+	server.peer = proto.NewReplicationNodesClient(conn)
+
 	proto.RegisterAuctionServer(
 		grpcServer,
 		server,
