@@ -24,22 +24,22 @@ const (
 type BidAckEnum int32
 
 const (
-	BidAckEnum_FAIL      BidAckEnum = 0
-	BidAckEnum_SUCCESS   BidAckEnum = 1
-	BidAckEnum_EXCEPTION BidAckEnum = 2
+	BidAckEnum_EXCEPTION BidAckEnum = 0
+	BidAckEnum_FAIL      BidAckEnum = 1
+	BidAckEnum_SUCCESS   BidAckEnum = 2
 )
 
 // Enum value maps for BidAckEnum.
 var (
 	BidAckEnum_name = map[int32]string{
-		0: "FAIL",
-		1: "SUCCESS",
-		2: "EXCEPTION",
+		0: "EXCEPTION",
+		1: "FAIL",
+		2: "SUCCESS",
 	}
 	BidAckEnum_value = map[string]int32{
-		"FAIL":      0,
-		"SUCCESS":   1,
-		"EXCEPTION": 2,
+		"EXCEPTION": 0,
+		"FAIL":      1,
+		"SUCCESS":   2,
 	}
 )
 
@@ -199,7 +199,7 @@ func (x *BidAck) GetAck() BidAckEnum {
 	if x != nil {
 		return x.Ack
 	}
-	return BidAckEnum_FAIL
+	return BidAckEnum_EXCEPTION
 }
 
 type Outcome struct {
@@ -262,6 +262,50 @@ func (x *Outcome) GetBidderName() string {
 	return ""
 }
 
+type Time struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	AuctionStartTime int64                  `protobuf:"varint,1,opt,name=auctionStartTime,proto3" json:"auctionStartTime,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *Time) Reset() {
+	*x = Time{}
+	mi := &file_Ass5_proto_Ass5_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Time) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Time) ProtoMessage() {}
+
+func (x *Time) ProtoReflect() protoreflect.Message {
+	mi := &file_Ass5_proto_Ass5_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Time.ProtoReflect.Descriptor instead.
+func (*Time) Descriptor() ([]byte, []int) {
+	return file_Ass5_proto_Ass5_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Time) GetAuctionStartTime() int64 {
+	if x != nil {
+		return x.AuctionStartTime
+	}
+	return 0
+}
+
 var File_Ass5_proto_Ass5_proto protoreflect.FileDescriptor
 
 const file_Ass5_proto_Ass5_proto_rawDesc = "" +
@@ -280,22 +324,22 @@ const file_Ass5_proto_Ass5_proto_rawDesc = "" +
 	"highestBid\x12'\n" +
 	"\x0fauction_ongoing\x18\x02 \x01(\bR\x0eauctionOngoing\x12\x1f\n" +
 	"\vbidder_name\x18\x03 \x01(\tR\n" +
-	"bidderName*2\n" +
+	"bidderName\"2\n" +
+	"\x04Time\x12*\n" +
+	"\x10auctionStartTime\x18\x01 \x01(\x03R\x10auctionStartTime*2\n" +
 	"\n" +
-	"BidAckEnum\x12\b\n" +
-	"\x04FAIL\x10\x00\x12\v\n" +
-	"\aSUCCESS\x10\x01\x12\r\n" +
-	"\tEXCEPTION\x10\x022Z\n" +
+	"BidAckEnum\x12\r\n" +
+	"\tEXCEPTION\x10\x00\x12\b\n" +
+	"\x04FAIL\x10\x01\x12\v\n" +
+	"\aSUCCESS\x10\x022Z\n" +
 	"\aAuction\x12'\n" +
 	"\x03Bid\x12\x11.proto.BidderData\x1a\r.proto.BidAck\x12&\n" +
-	"\x06Result\x12\f.proto.Empty\x1a\x0e.proto.Outcome2\xfa\x01\n" +
+	"\x06Result\x12\f.proto.Empty\x1a\x0e.proto.Outcome2\x98\x01\n" +
 	"\x10ReplicationNodes\x12.\n" +
 	"\n" +
 	"ForwardBid\x12\x11.proto.BidderData\x1a\r.proto.BidAck\x12-\n" +
-	"\rForwardResult\x12\f.proto.Empty\x1a\x0e.proto.Outcome\x12.\n" +
-	"\vAcceptedBid\x12\x11.proto.BidderData\x1a\f.proto.Empty\x12*\n" +
-	"\fStartAuction\x12\f.proto.Empty\x1a\f.proto.Empty\x12+\n" +
-	"\rAuctionClosed\x12\f.proto.Empty\x1a\f.proto.EmptyB\x0fZ\rAuction/protob\x06proto3"
+	"\rForwardResult\x12\f.proto.Empty\x1a\x0e.proto.Outcome\x12%\n" +
+	"\bSyncTime\x12\f.proto.Empty\x1a\v.proto.TimeB\x0fZ\rAuction/protob\x06proto3"
 
 var (
 	file_Ass5_proto_Ass5_proto_rawDescOnce sync.Once
@@ -310,13 +354,14 @@ func file_Ass5_proto_Ass5_proto_rawDescGZIP() []byte {
 }
 
 var file_Ass5_proto_Ass5_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_Ass5_proto_Ass5_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_Ass5_proto_Ass5_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_Ass5_proto_Ass5_proto_goTypes = []any{
 	(BidAckEnum)(0),    // 0: proto.BidAckEnum
 	(*Empty)(nil),      // 1: proto.Empty
 	(*BidderData)(nil), // 2: proto.BidderData
 	(*BidAck)(nil),     // 3: proto.BidAck
 	(*Outcome)(nil),    // 4: proto.Outcome
+	(*Time)(nil),       // 5: proto.Time
 }
 var file_Ass5_proto_Ass5_proto_depIdxs = []int32{
 	0, // 0: proto.BidAck.ack:type_name -> proto.BidAckEnum
@@ -324,18 +369,14 @@ var file_Ass5_proto_Ass5_proto_depIdxs = []int32{
 	1, // 2: proto.Auction.Result:input_type -> proto.Empty
 	2, // 3: proto.ReplicationNodes.ForwardBid:input_type -> proto.BidderData
 	1, // 4: proto.ReplicationNodes.ForwardResult:input_type -> proto.Empty
-	2, // 5: proto.ReplicationNodes.AcceptedBid:input_type -> proto.BidderData
-	1, // 6: proto.ReplicationNodes.StartAuction:input_type -> proto.Empty
-	1, // 7: proto.ReplicationNodes.AuctionClosed:input_type -> proto.Empty
-	3, // 8: proto.Auction.Bid:output_type -> proto.BidAck
-	4, // 9: proto.Auction.Result:output_type -> proto.Outcome
-	3, // 10: proto.ReplicationNodes.ForwardBid:output_type -> proto.BidAck
-	4, // 11: proto.ReplicationNodes.ForwardResult:output_type -> proto.Outcome
-	1, // 12: proto.ReplicationNodes.AcceptedBid:output_type -> proto.Empty
-	1, // 13: proto.ReplicationNodes.StartAuction:output_type -> proto.Empty
-	1, // 14: proto.ReplicationNodes.AuctionClosed:output_type -> proto.Empty
-	8, // [8:15] is the sub-list for method output_type
-	1, // [1:8] is the sub-list for method input_type
+	1, // 5: proto.ReplicationNodes.SyncTime:input_type -> proto.Empty
+	3, // 6: proto.Auction.Bid:output_type -> proto.BidAck
+	4, // 7: proto.Auction.Result:output_type -> proto.Outcome
+	3, // 8: proto.ReplicationNodes.ForwardBid:output_type -> proto.BidAck
+	4, // 9: proto.ReplicationNodes.ForwardResult:output_type -> proto.Outcome
+	5, // 10: proto.ReplicationNodes.SyncTime:output_type -> proto.Time
+	6, // [6:11] is the sub-list for method output_type
+	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -352,7 +393,7 @@ func file_Ass5_proto_Ass5_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_Ass5_proto_Ass5_proto_rawDesc), len(file_Ass5_proto_Ass5_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -24,11 +23,14 @@ type auctionServer struct {
 	 proto.UnimplementedReplicationNodesServer
 
 	mu           sync.Mutex
+	mu2  sync.Mutex
 	isLeader bool
 	highestBid int64
 	highestBidder string
 	bidders      map[string]int64
 	auctionOngoing bool
+	startTime int64
+	auctionDuration int64
 
 	peer proto.ReplicationNodesClient 
 }
@@ -40,6 +42,8 @@ func newAuctionServer(leader bool) *auctionServer {
 		highestBidder: "",
         bidders:    make(map[string]int64),
 		auctionOngoing: true,
+		startTime: time.Now().Unix(),
+		auctionDuration: 1000,
 
 	}
 }
@@ -50,17 +54,15 @@ func (s *auctionServer) Bid(
 ) (*proto.BidAck, error) {
 
 	s.mu.Lock()
-	if !s.auctionOngoing {
-		s.mu.Unlock()
-		fmt.Println("Auction is not ongoing anymore!")
-		return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
-	}
-	s.mu.Unlock()
-
+	
+	
+	
 	bidderName := req.BidderName
 	bidAmount := req.Amount
+	log.Printf("Component=Server Event=BidReceived BidderID=%s Amount=%d",
+    bidderName, bidAmount)
 
-	s.mu.Lock()
+	
 	leader := s.isLeader
 	s.mu.Unlock()
 
@@ -69,10 +71,14 @@ func (s *auctionServer) Bid(
 	if !leader {
 		// Backup forwards the bid to the leader
 		forwardCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		log.Printf("Component=Server Event=BidForwardedToLeader BidderID=%s Amount=%d",
+    	bidderName, bidAmount)
 		response, err := s.peer.ForwardBid(forwardCtx, req)
 		cancel()
 
 		if err == nil {
+			log.Printf("Component=Server Event=BidForwardResponse Ack=%s",
+        	response.GetAck().String())
 			return response, nil
 		}
 
@@ -83,11 +89,12 @@ func (s *auctionServer) Bid(
 		if status.Code(err) == codes.DeadlineExceeded ||
 			status.Code(err) == codes.Unavailable {
 
-			log.Println("Leader unreachable! Taking over.")
+			
 
 			s.mu.Lock()
 			s.isLeader = true
 			s.mu.Unlock()
+			log.Printf("Component=Server Event=LeaderUnreachable Action=PromoteToLeader Error=%v", err)
 
 			skipForward = true // ADDED: Don't forward again
 		} else {
@@ -96,9 +103,38 @@ func (s *auctionServer) Bid(
 	}
 
 	// Leader replicates to backup, unless peer is unreachable
-	if !skipForward { // ADDED
+	s.mu2.Lock()
+	defer s.mu2.Unlock()
 
+	s.mu.Lock()
+
+	if s.startTime + s.auctionDuration <= time.Now().Unix(){
+		s.auctionOngoing = false
+		log.Printf("Component=Server Event=AuctionEnded HighestBid=%d",
+    	s.highestBid)
+		s.mu.Unlock()
+		
+		return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
+
+	}
+	if !s.auctionOngoing {
+		s.mu.Unlock()
+		return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
+	}
+
+	if bidAmount <= s.highestBid {
+		log.Printf("Component=Server Event=BidRejected Reason=TooLow BidderID=%s Amount=%d HighestBid=%d",
+    	bidderName, bidAmount, s.highestBid)
+		s.mu.Unlock()
+		return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
+	}
+
+	s.mu.Unlock()
+	if !skipForward { // ADDED
+		
 		forwardCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		log.Printf("Component=Server Event=ReplicationStarted BidderID=%s Amount=%d",
+    	bidderName, bidAmount)
 		response, err := s.peer.ForwardBid(forwardCtx, req)
 		cancel()
 
@@ -110,24 +146,27 @@ func (s *auctionServer) Bid(
 			if status.Code(err) == codes.DeadlineExceeded ||
 				status.Code(err) == codes.Unavailable {
 
-				log.Println("Backup unreachable! Continuing with bid!")
+				log.Printf("Component=Server Event=ReplicationUnavailable Action=ContinueLocally Error=%v", err)
 
 			} else {
-				log.Printf("Other gRPC error: %v", err)
+				log.Printf("Component=Server Event=ReplicationRPCFailed Error=%v", err)
 				return nil, err
 			}
 
 		} else {
 
 			if response.GetAck() == proto.BidAckEnum_SUCCESS {
-				fmt.Println("Bid accepted on backup node")
+				log.Printf("Component=Server Event=ReplicationAcknowledged BidderID=%s Amount=%d",
+    bidderName, bidAmount)
 
 			} else if response.GetAck() == proto.BidAckEnum_FAIL {
-				fmt.Println("Bid rejected on backup node")
+				log.Printf("Component=Server Event=ReplicationRejected BidderID=%s Amount=%d",
+    bidderName, bidAmount)
 				return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
 
 			} else if response.GetAck() == proto.BidAckEnum_EXCEPTION {
-				fmt.Println("Auction ended on backup node")
+				log.Printf("Component=Server Event=ReplicationException BidderID=%s Amount=%d",
+    bidderName, bidAmount)
 				return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
 			}
 		}
@@ -139,20 +178,21 @@ func (s *auctionServer) Bid(
 	if s.highestBid < bidAmount {
 		s.bidders[bidderName] = bidAmount
 
-		log.Printf("Bid accepted by user %s at amount %d!",
-			bidderName, bidAmount)
+		log.Printf("Component=Server Event=BidAccepted BidderID=%s Amount=%d",
+    bidderName, bidAmount)
 
 		s.highestBid = bidAmount
 		s.highestBidder = bidderName
 		s.mu.Unlock()
-
+		
 		return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS}, nil
 
 	} else {
-		log.Printf("Bid is too low! User %s amount %d needs to be higher than %d!",
-			bidderName, bidAmount, s.highestBid)
+		log.Printf("Component=Server Event=BidRejected Reason=TooLow BidderID=%s Amount=%d HighestBid=%d",
+    bidderName, bidAmount, s.highestBid)
 
 		s.mu.Unlock()
+		
 
 		return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
 	}
@@ -164,17 +204,18 @@ func (s *auctionServer) ForwardBid(
 
    
 	s.mu.Lock()
-    if !s.auctionOngoing {
-		s.mu.Unlock()
-        return &proto.BidAck{Ack: proto.BidAckEnum_EXCEPTION}, nil
-    }
-
+    
 	
 	leader := s.isLeader
+	log.Printf("Component=Server Event=ForwardBidReceived BidderID=%s Amount=%d IsLeader=%t",
+    req.BidderName, req.Amount, leader)
 	
 
 	if leader {
+		log.Printf("Component=Server Event=ForwardedBidDelegated BidderID=%s Amount=%d",
+    	req.BidderName, req.Amount)
 		s.mu.Unlock()
+		
 		return s.Bid(ctx, req)
 	}
 	
@@ -182,6 +223,8 @@ func (s *auctionServer) ForwardBid(
 	
 
     if req.Amount <= s.highestBid {
+		log.Printf("Component=Server Event=ReplicationRejected Reason=TooLow BidderID=%s Amount=%d HighestBid=%d",
+    	req.BidderName, req.Amount, s.highestBid)
 		s.mu.Unlock()
         return &proto.BidAck{Ack: proto.BidAckEnum_FAIL}, nil
     }
@@ -191,33 +234,105 @@ func (s *auctionServer) ForwardBid(
     
 	
 
-    log.Printf("Replicated bid from %s: %d", req.BidderName, req.Amount)
+    log.Printf("Component=Server Event=BidReplicated BidderID=%s Amount=%d",
+    req.BidderName, req.Amount)
 	s.mu.Unlock()
     return &proto.BidAck{Ack: proto.BidAckEnum_SUCCESS}, nil
 }
 
 
-func (s *auctionServer) Result(ctx context.Context,
-    req *proto.Empty,) (*proto.Outcome, error) {
+func (s *auctionServer) Result(
+    ctx context.Context,
+    req *proto.Empty,
+) (*proto.Outcome, error) {
 
-	s.mu.Lock()
+    s.mu.Lock()
+    leader := s.isLeader
+    s.mu.Unlock()
+	log.Printf("Component=Server Event=ResultRequested IsLeader=%t", leader)
+
+    // CASE 1: Backup receives Result()
+    if !leader {
+		log.Printf("Component=Server Event=ResultForwardedToLeader")
+        forwardCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+        response, err := s.peer.ForwardResult(forwardCtx, req)
+        cancel()
+
+        if err == nil {
+			log.Printf("Component=Server Event=ResultForwardSucceeded HighestBid=%d",
+        response.GetHighestBid())
+            return response, nil
+        }
+
+        if ctx.Err() != nil {
+            return nil, err
+        }
+
+        if status.Code(err) == codes.DeadlineExceeded ||
+            status.Code(err) == codes.Unavailable {
+
+            
+
+            s.mu.Lock()
+            s.isLeader = true
+            s.mu.Unlock()
+			log.Printf("Component=Server Event=LeaderUnreachable Action=PromoteToLeader Source=Result Error=%v",
+    err)
+
+            // Continue below and return local state
+
+        } else {
+            return nil, err
+        }
+    }
+
+    // CASE 2: Leader returns its local auction state
+    s.mu.Lock()
     defer s.mu.Unlock()
 
-	return &proto.Outcome{
-		HighestBid: s.highestBid,
-		AuctionOngoing: s.auctionOngoing,
-		BidderName: s.highestBidder,
-	}, nil
+    if time.Now().Unix() >= s.startTime+s.auctionDuration {
+        s.auctionOngoing = false
+    }
+	log.Printf("Component=Server Event=ResultReturned HighestBid=%d HighestBidder=%s AuctionOngoing=%t",
+    s.highestBid, s.highestBidder, s.auctionOngoing)
+    return &proto.Outcome{
+        HighestBid:     s.highestBid,
+        AuctionOngoing: s.auctionOngoing,
+        BidderName:     s.highestBidder,
+    }, nil
+}
+func (s *auctionServer) ForwardResult(
+    ctx context.Context,
+    req *proto.Empty,
+) (*proto.Outcome, error) {
 
+    s.mu.Lock()
+	log.Printf("Component=Server Event=ForwardResultReceived")
+    defer s.mu.Unlock()
+
+    // Update auction status
+    if time.Now().Unix() >= s.startTime+s.auctionDuration {
+        s.auctionOngoing = false
+    }
+	log.Printf("Component=Server Event=ForwardResultReturned HighestBid=%d HighestBidder=%s AuctionOngoing=%t",
+    s.highestBid, s.highestBidder, s.auctionOngoing)
+    return &proto.Outcome{
+        HighestBid:     s.highestBid,
+        AuctionOngoing: s.auctionOngoing,
+        BidderName:     s.highestBidder,
+    }, nil
 }
 
-func (s *auctionServer) AcceptedBid(ctx context.Context, bid *proto.BidderData) (*proto.Empty, error) {
+func (s *auctionServer) SyncTime(
+    ctx context.Context,
+    req *proto.Empty,
+) (*proto.Time, error)  {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.highestBid = bid.Amount
-	s.highestBidder = bid.BidderName
-
-	return &proto.Empty{}, nil
+	
+	log.Printf("Component=Server Event=SyncTimeResponded StartTime=%d",
+    s.startTime)
+	return &proto.Time{ AuctionStartTime: s.startTime,}, nil
 }
 
 func main() {
@@ -265,7 +380,22 @@ func main() {
 		server,
 	)
 	proto.RegisterReplicationNodesServer(grpcServer, server)
+	if !leaderN {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    	defer cancel()
+		timeResult,err := server.peer.SyncTime(ctx,&proto.Empty{})
 
+		if err != nil {
+        log.Fatalf("Component=Server Event=TimeSyncFailed Error=%v", err)
+		} else {
+			server.mu.Lock()
+			server.startTime = timeResult.AuctionStartTime
+			server.mu.Unlock()
+
+			log.Printf("Auction start time synchronized: %d", server.startTime)
+		}
+
+	}
 	// Catch Ctrl+C and termination signals so main can finish normally
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
